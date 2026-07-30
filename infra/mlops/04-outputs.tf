@@ -20,3 +20,8 @@ output "endpoint_name" {
   description = "Serverless inference endpoint, null when disabled."
   value       = one(aws_sagemaker_endpoint.this[*].name)
 }
+
+output "endpoint_url" {
+  description = "Serverless inference endpoint, null when disabled."
+  value       = one(aws_sagemaker_endpoint.this[*].name)
+}

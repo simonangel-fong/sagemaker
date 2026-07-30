@@ -1,21 +1,13 @@
 # endpoint.tf
-#
-# Serverless inference: scales to zero, so nothing bills between requests.
-# Set model_artifact_uri to a training job output to enable; leave it empty
-# and no endpoint is created.
 
 locals {
   endpoint_enabled = var.model_artifact_uri != ""
-
-  # Names are keyed off both the artifact and the handler code, so changing
-  # either forces a new model and config rather than mutating one in place.
-  revision = local.endpoint_enabled ? substr(sha1("${var.model_artifact_uri}${data.archive_file.inference_code[0].output_md5}"), 0, 8) : ""
+  revision         = local.endpoint_enabled ? substr(sha1("${var.model_artifact_uri}${data.archive_file.inference_code[0].output_md5}"), 0, 8) : ""
 }
 
 # ##############################
 # Inference code
 # ##############################
-# The serving container fetches this tarball and imports inference.py from it.
 data "archive_file" "inference_code" {
   count = local.endpoint_enabled ? 1 : 0
 
@@ -79,8 +71,6 @@ resource "aws_sagemaker_endpoint_configuration" "this" {
     }
   }
 
-  # The endpoint update must be able to reference the new config while the
-  # old one still exists, or UpdateEndpoint fails on a deleted config.
   lifecycle {
     create_before_destroy = true
   }

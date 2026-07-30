@@ -1,8 +1,4 @@
 # training-job.tf
-#
-# Training jobs are created at submit time via the SageMaker API, not declared
-# here. This file grants the permissions a submitter needs and gives the job
-# somewhere to write.
 
 # ##############################
 # Submit permissions
@@ -83,8 +79,6 @@ resource "aws_iam_role_policy_attachment" "training_job" {
 # ##############################
 # Job logs
 # ##############################
-# Created explicitly so retention is bounded; SageMaker would otherwise make
-# this group with no expiry.
 resource "aws_cloudwatch_log_group" "training_jobs" {
   name              = "/aws/sagemaker/TrainingJobs"
   retention_in_days = 14
