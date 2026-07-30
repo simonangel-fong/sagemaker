@@ -153,6 +153,48 @@ data "aws_iam_policy_document" "sagemaker_scoped" {
 
     resources = ["*"]
   }
+
+  # Studio launches JupyterLab as an "app" inside a "space"; without these the
+  # UI shows a permission banner and no application will open.
+  statement {
+    sid    = "StudioSpacesAndApps"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:CreatePresignedDomainUrl",
+      "sagemaker:ListSpaces",
+      "sagemaker:DescribeSpace",
+      "sagemaker:CreateSpace",
+      "sagemaker:UpdateSpace",
+      "sagemaker:DeleteSpace",
+      "sagemaker:ListApps",
+      "sagemaker:DescribeApp",
+      "sagemaker:CreateApp",
+      "sagemaker:DeleteApp",
+    ]
+
+    resources = [
+      "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:domain/${aws_sagemaker_domain.this.id}",
+      "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:user-profile/${aws_sagemaker_domain.this.id}/*",
+      "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:space/${aws_sagemaker_domain.this.id}/*",
+      "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:app/${aws_sagemaker_domain.this.id}/*",
+    ]
+  }
+
+  # ListSpaces/ListApps are list operations and cannot be scoped to an ARN.
+  statement {
+    sid    = "StudioListUnscoped"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:ListSpaces",
+      "sagemaker:ListApps",
+      "sagemaker:ListUserProfiles",
+      "sagemaker:ListDomains",
+    ]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "sagemaker_scoped" {
@@ -165,8 +207,6 @@ resource "aws_iam_role_policy_attachment" "sagemaker_scoped" {
   role       = aws_iam_role.sagemaker_execution.name
   policy_arn = aws_iam_policy.sagemaker_scoped.arn
 }
-
-
 
 # ##############################
 # KMS: Customer managed key
