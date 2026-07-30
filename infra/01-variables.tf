@@ -36,6 +36,19 @@ variable "aws_region" {
 }
 
 # ##############################
+# VPC
+# ##############################
+variable "vpc_id" {
+  description = ""
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = ""
+  type        = list(string)
+}
+
+# ##############################
 # Sagemaker
 # ##############################
 variable "notebook_instance_type" {
