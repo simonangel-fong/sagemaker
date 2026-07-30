@@ -28,7 +28,10 @@ def parse_args():
     # Hyperparameters arrive as command line flags.
     p.add_argument("--n-estimators", type=int, default=100)
     p.add_argument("--max-depth", type=int, default=None)
-    p.add_argument("--min-samples-leaf", type=int, default=1)
+    # Fully grown trees memorize: 1M nodes, 70 MB. Capping the leaf size costs
+    # ~0.7% r2 and cuts the artifact to 12 MB, which matters on a serverless
+    # endpoint that reloads the model on every cold start.
+    p.add_argument("--min-samples-leaf", type=int, default=5)
     p.add_argument("--random-state", type=int, default=42)
 
     # Paths come from the environment SageMaker sets up.

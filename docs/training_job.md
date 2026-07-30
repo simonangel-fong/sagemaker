@@ -1,7 +1,18 @@
-# Training Job
+# AWS Sagemaker - Training Job
 
-Training on ephemeral compute. SageMaker provisions the instance, runs the
-script, uploads the model, and terminates. Nothing bills between jobs.
+[Back](../README.md)
+
+- [AWS Sagemaker - Training Job](#aws-sagemaker---training-job)
+  - [Architecture](#architecture)
+  - [Files](#files)
+  - [Key contract](#key-contract)
+  - [Use](#use)
+
+---
+
+## Architecture
+
+Training on ephemeral compute. SageMaker provisions the instance, runs the script, uploads the model, and terminates. Nothing bills between jobs.
 
 ```
    submit_job.py
@@ -17,6 +28,8 @@ script, uploads the model, and terminates. Nothing bills between jobs.
   s3://…/raw/mnist/     s3://…/models/…/model.tar.gz
 ```
 
+---
+
 ## Files
 
 | File                 | Purpose                                       |
@@ -24,6 +37,8 @@ script, uploads the model, and terminates. Nothing bills between jobs.
 | `src/train.py`       | Entry point run inside the container          |
 | `src/submit_job.py`  | Submits the job                               |
 | `09-training-job.tf` | IAM to create jobs + pass the role, log group |
+
+---
 
 ## Key contract
 
@@ -38,6 +53,8 @@ joblib.dump(clf, Path(args.model_dir) / "model.joblib")
 print(f"test_accuracy={acc:.4f}")   # scraped from CloudWatch
 ```
 
+---
+
 ## Use
 
 ```sh
@@ -45,20 +62,12 @@ print(f"test_accuracy={acc:.4f}")   # scraped from CloudWatch
 python -m venv .venv
 .venv\Scripts\activate
 
-pip install sagemaker-train   
+pip install sagemaker-train
 
-python src/submit_job.py \
-  --bucket (terraform -chdir=infra/mlops output -raw data_bucket) \
-  --role   (terraform -chdir=infra/mlops output -raw execution_role_arn)
+# submit training job
+python src/submit_job.py --bucket (terraform -chdir=infra/mlops output -raw data_bucket) --role   (terraform -chdir=infra/mlops output -raw execution_role_arn)
 ```
 
 Result: `Completed`, 124 billable seconds, `test_accuracy=0.9015`.
 
-## Notes
-
-- SDK v3 replaced the framework estimators (`SKLearn`, `PyTorch`) with the
-  unified `ModelTrainer`, which takes an explicit image URI.
-- IAM needs `iam:PassRole` — submitting hands the execution role to SageMaker.
-  The role also needs `ec2:*NetworkInterface*`; the SDK validates this upfront.
-- **Windows:** the SDK writes `sm_train.sh` in text mode, producing CRLF that
-  the Linux container rejects. `submit_job.py` patches it back to LF.
+![training](./img/training_jobs.png)

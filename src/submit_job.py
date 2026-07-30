@@ -58,7 +58,7 @@ def parse_args():
     p.add_argument("--instance-type", default="ml.m5.large")
     p.add_argument("--image", default=SKLEARN_IMAGE)
     p.add_argument("--n-estimators", type=int, default=100)
-    p.add_argument("--min-samples-leaf", type=int, default=1)
+    p.add_argument("--min-samples-leaf", type=int, default=5)
     p.add_argument("--no-wait", action="store_true", help="submit and return")
     return p.parse_args()
 

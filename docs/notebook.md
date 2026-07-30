@@ -1,4 +1,16 @@
-# Notebook Instance
+# AWS Sagemaker - Notebook Instance
+
+[Back](../README.md)
+
+- [AWS Sagemaker - Notebook Instance](#aws-sagemaker---notebook-instance)
+  - [Architecture](#architecture)
+  - [Files](#files)
+  - [Key config](#key-config)
+  - [Use](#use)
+
+---
+
+## Architecture
 
 A managed Jupyter server for authoring. Bills per hour while `InService`.
 
@@ -17,6 +29,8 @@ A managed Jupyter server for authoring. Bills per hour while `InService`.
               └──────────┘          └────────────┘
 ```
 
+---
+
 ## Files
 
 | File                       | Purpose                                   |
@@ -25,6 +39,8 @@ A managed Jupyter server for authoring. Bills per hour while `InService`.
 | `07-iam.tf`                | Execution role, scoped policy             |
 | `06-s3.tf`                 | Data bucket                               |
 | `05-kms.tf`                | CMK for volume + bucket                   |
+
+---
 
 ## Key config
 
@@ -39,6 +55,8 @@ resource "aws_sagemaker_notebook_instance" "this" {
 }
 ```
 
+---
+
 ## Use
 
 ```sh
@@ -48,14 +66,8 @@ terraform -chdir=infra/mlops apply -auto-approve
 terraform -chdir=infra/mlops output -raw notebook_login_command
 ```
 
-Open `notebooks/train.ipynb` and run all cells: downloads MNIST, uploads to
-`raw/`, trains, writes the model to `models/`.
+![notebook instance](./img/notebook_instance.png)
 
-## Notes
+![train notebook](./img/notebook_train01.png)
 
-- Subnet **must** route to an IGW or NAT, or pip and dataset downloads hang.
-- The clone happens at instance start only. Later commits need `git pull`.
-- No push: the code repository has no credentials attached.
-- `08-sagemaker-notebook.tf` is currently commented out to stop the hourly
-  charge. Uncomment and re-apply to bring the instance back; S3, KMS and IAM
-  are independent, so data survives either way.
+![train notebook](./img/notebook_train02.png)
