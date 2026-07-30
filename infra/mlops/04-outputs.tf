@@ -5,24 +5,15 @@ output "notebook_login_command" {
   value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
 }
 
+# Name carries a random suffix, so this cannot be derived by hand.
 output "data_bucket" {
-  description = "S3 bucket the notebook can read/write."
+  description = "S3 bucket for data, models and inference code."
   value       = aws_s3_bucket.data.id
 }
 
 output "execution_role_arn" {
-  description = "Role passed to SageMaker training jobs."
+  description = "Role passed to training jobs and the endpoint."
   value       = aws_iam_role.sagemaker_execution.arn
-}
-
-output "training_input_uri" {
-  description = "S3 prefix used as the training channel."
-  value       = "s3://${aws_s3_bucket.data.id}/raw/bike/"
-}
-
-output "training_output_uri" {
-  description = "S3 prefix where job artifacts land."
-  value       = "s3://${aws_s3_bucket.data.id}/models/"
 }
 
 output "endpoint_name" {
