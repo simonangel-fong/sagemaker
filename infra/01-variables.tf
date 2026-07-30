@@ -67,3 +67,17 @@ variable "notebook_volume_size" {
     error_message = "notebook_volume_size must be between 5 and 16384 GB."
   }
 }
+
+# ##############################
+# Git
+# ##############################
+variable "git_repository_url" {
+  description = "HTTPS URL of the repo cloned into the notebook on start."
+  type        = string
+}
+
+variable "git_branch" {
+  description = "Branch to check out."
+  type        = string
+  default     = "master"
+}

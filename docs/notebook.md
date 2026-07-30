@@ -71,3 +71,11 @@ terraform -chdir=infra fmt && terraform -chdir=infra validate
 
 terraform -chdir=infra apply -auto-approve
 ```
+
+
+## Notebook
+
+```sh
+terraform -chdir=infra output -raw notebook_login_command
+# aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name sagemaker-notebook-dev-notebook --region ca-central-1 --query AuthorizedUrl --output text
+```
