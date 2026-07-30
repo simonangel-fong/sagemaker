@@ -1,7 +1,5 @@
 # locals.tf
 
-# Random suffix so the bucket can be destroyed and recreated without waiting
-# for the global name to free up.
 resource "random_string" "suffix" {
   length  = 6
   special = false

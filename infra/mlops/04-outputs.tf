@@ -17,7 +17,7 @@ output "execution_role_arn" {
 
 output "training_input_uri" {
   description = "S3 prefix used as the training channel."
-  value       = "s3://${aws_s3_bucket.data.id}/raw/mnist/"
+  value       = "s3://${aws_s3_bucket.data.id}/raw/bike/"
 }
 
 output "training_output_uri" {

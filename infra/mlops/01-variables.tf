@@ -60,7 +60,7 @@ variable "public_subnet_ids" {
 }
 
 # ##############################
-# Sagemaker
+# Sagemaker Notebook
 # ##############################
 variable "notebook_instance_type" {
   description = "EC2 instance type for the SageMaker notebook instance."
@@ -80,10 +80,22 @@ variable "notebook_volume_size" {
 }
 
 # ##############################
-# Endpoint
+# Git
 # ##############################
-# Output of a training job, e.g.
-# s3://<bucket>/models/mnist-logreg-<ts>/output/model.tar.gz
+variable "git_repository_url" {
+  description = "HTTPS URL of the repo cloned into the notebook on start."
+  type        = string
+}
+
+variable "git_branch" {
+  description = "Branch to check out."
+  type        = string
+  default     = "master"
+}
+
+# ##############################
+# Deployment Endpoint
+# ##############################
 variable "model_artifact_uri" {
   description = "S3 URI of the model.tar.gz to serve. Empty disables the endpoint."
   type        = string
@@ -111,18 +123,4 @@ variable "serverless_max_concurrency" {
   description = "Concurrent invocations before throttling."
   type        = number
   default     = 2
-}
-
-# ##############################
-# Git
-# ##############################
-variable "git_repository_url" {
-  description = "HTTPS URL of the repo cloned into the notebook on start."
-  type        = string
-}
-
-variable "git_branch" {
-  description = "Branch to check out."
-  type        = string
-  default     = "master"
 }

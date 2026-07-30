@@ -25,7 +25,7 @@ Training on ephemeral compute. SageMaker provisions the instance, runs the scrip
    └──┬───────────────────────┬──┘
       │ SM_CHANNEL_TRAIN      │ SM_MODEL_DIR
       ▼                       ▼
-  s3://…/raw/mnist/     s3://…/models/…/model.tar.gz
+  s3://…/raw/bike/      s3://…/models/…/model.tar.gz
 ```
 
 ---
@@ -49,8 +49,8 @@ output directory:
 p.add_argument("--train",     default=os.environ.get("SM_CHANNEL_TRAIN"))
 p.add_argument("--model-dir", default=os.environ.get("SM_MODEL_DIR"))
 ...
-joblib.dump(clf, Path(args.model_dir) / "model.joblib")
-print(f"test_accuracy={acc:.4f}")   # scraped from CloudWatch
+joblib.dump(model, Path(args.model_dir) / "model.joblib")
+print(f"rmse={rmse:.4f}")            # scraped from CloudWatch
 ```
 
 ---
@@ -68,6 +68,6 @@ pip install sagemaker-train
 python src/submit_job.py --bucket (terraform -chdir=infra/mlops output -raw data_bucket) --role   (terraform -chdir=infra/mlops output -raw execution_role_arn)
 ```
 
-Result: `Completed`, 124 billable seconds, `test_accuracy=0.9015`.
+Result: `Completed`, 115 billable seconds, `rmse=126.35 r2=0.6342`.
 
 ![training](./img/training_jobs.png)

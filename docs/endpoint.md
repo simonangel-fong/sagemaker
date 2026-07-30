@@ -31,7 +31,7 @@ The container calls these four functions. Only `model_fn` is required:
 
 ```python
 def model_fn(model_dir):            # load model.joblib
-def input_fn(body, content_type):   # parse JSON or CSV -> (n, 784)
+def input_fn(body, content_type):   # parse JSON or CSV -> records
 def predict_fn(data, model):        # predict + confidence
 def output_fn(prediction, accept):  # serialize JSON
 ```
@@ -52,7 +52,7 @@ python src/invoke_endpoint.py \
   --bucket   (terraform -chdir=infra/mlops output -raw data_bucket)
 ```
 
-Result: 5/5 correct on unseen digits, confidence 0.974-1.000.
+Result: 8 held-out 2012 hours, mean absolute error 84.9 rentals.
 
 ## Notes
 

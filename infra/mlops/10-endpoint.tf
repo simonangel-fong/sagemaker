@@ -6,6 +6,10 @@
 
 locals {
   endpoint_enabled = var.model_artifact_uri != ""
+
+  # Names are keyed off both the artifact and the handler code, so changing
+  # either forces a new model and config rather than mutating one in place.
+  revision = local.endpoint_enabled ? substr(sha1("${var.model_artifact_uri}${data.archive_file.inference_code[0].output_md5}"), 0, 8) : ""
 }
 
 # ##############################
@@ -18,6 +22,7 @@ data "archive_file" "inference_code" {
   type        = "tar.gz"
   source_dir  = "${path.module}/../../src"
   output_path = "${path.module}/.terraform/tmp/sourcedir.tar.gz"
+  excludes    = ["__pycache__"]
 }
 
 resource "aws_s3_object" "inference_code" {
@@ -35,7 +40,7 @@ resource "aws_s3_object" "inference_code" {
 resource "aws_sagemaker_model" "this" {
   count = local.endpoint_enabled ? 1 : 0
 
-  name               = "${local.prefix_name}-model-${substr(data.archive_file.inference_code[0].output_md5, 0, 8)}"
+  name               = "${local.prefix_name}-model-${local.revision}"
   execution_role_arn = aws_iam_role.sagemaker_execution.arn
 
   primary_container {
@@ -49,6 +54,10 @@ resource "aws_sagemaker_model" "this" {
       SAGEMAKER_REGION              = var.aws_region
     }
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ##############################
@@ -57,7 +66,7 @@ resource "aws_sagemaker_model" "this" {
 resource "aws_sagemaker_endpoint_configuration" "this" {
   count = local.endpoint_enabled ? 1 : 0
 
-  name        = "${local.prefix_name}-endpoint-config-${substr(data.archive_file.inference_code[0].output_md5, 0, 8)}"
+  name        = "${local.prefix_name}-endpoint-config-${local.revision}"
   kms_key_arn = aws_kms_key.this.arn
 
   production_variants {
@@ -68,6 +77,12 @@ resource "aws_sagemaker_endpoint_configuration" "this" {
       memory_size_in_mb = var.serverless_memory_mb
       max_concurrency   = var.serverless_max_concurrency
     }
+  }
+
+  # The endpoint update must be able to reference the new config while the
+  # old one still exists, or UpdateEndpoint fails on a deleted config.
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
