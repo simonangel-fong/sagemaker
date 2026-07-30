@@ -1,6 +1,9 @@
 # s3.tf
+
+# force_destroy: learning demo, data and models are reproducible.
 resource "aws_s3_bucket" "data" {
-  bucket = "${local.prefix_name}-data-${data.aws_caller_identity.current.account_id}"
+  bucket        = local.bucket_name
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "data" {
@@ -33,10 +36,21 @@ resource "aws_s3_bucket_versioning" "data" {
 }
 
 # ##############################
+# Layout
+# ##############################
+# S3 has no real directories; these zero-byte keys just make the MLOps prefix
+# convention visible in the console.
+resource "aws_s3_object" "prefixes" {
+  for_each = toset(["raw/", "clean/", "features/", "models/"])
+
+  bucket = aws_s3_bucket.data.id
+  key    = each.value
+}
+
+# ##############################
 # Bucket policy
 # ##############################
-# Encryption at rest is handled by the SSE config above; this covers in transit.
-# AWS SDKs and the console already use HTTPS, so this denies nothing legitimate.
+# SSE covers encryption at rest; this covers in transit.
 data "aws_iam_policy_document" "data_bucket" {
   statement {
     sid       = "DenyInsecureTransport"
@@ -61,16 +75,14 @@ resource "aws_s3_bucket_policy" "data" {
   bucket = aws_s3_bucket.data.id
   policy = data.aws_iam_policy_document.data_bucket.json
 
-  # The public access block rejects policies it considers public; it must exist
-  # first so this one is evaluated against the right bucket state.
   depends_on = [aws_s3_bucket_public_access_block.data]
 }
 
 # ##############################
 # Lifecycle
 # ##############################
-# Versioning is on, so every re-run of a notebook leaves the previous object
-# behind at full price. Without these rules the bucket grows silently.
+# Versioning is on, so without these rules every re-run silently retains the
+# previous object at full price.
 resource "aws_s3_bucket_lifecycle_configuration" "data" {
   bucket = aws_s3_bucket.data.id
 
@@ -97,7 +109,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "data" {
     }
   }
 
-  # Raw datasets are re-downloadable, so they do not need warm storage forever.
   rule {
     id     = "archive-raw-data"
     status = "Enabled"

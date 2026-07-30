@@ -1,6 +1,11 @@
 # sagemaker-domain.tf
-
-# Permissions are attached in 08-iam.tf via a scoped customer managed policy.
+#
+# ARCHIVED -- not part of the active stack.
+#
+# Studio domain kept for reference. A domain is an independent product from the
+# notebook instance, not a prerequisite for it, and the notebook alone covers
+# this project. Restoring it also needs the Studio spaces/apps IAM statements
+# and the domain-scoped outputs that were removed from mlops/.
 
 # ##############################
 # Domain
