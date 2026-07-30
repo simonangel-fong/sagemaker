@@ -29,11 +29,7 @@ create notebook instance
 ---
 
 04
-network + iam prerequisites
-
-- 07-network.tf: vpc, subnet, security group for notebook
-- 08-iam.tf: sagemaker execution role + policy (s3, cloudwatch logs)
-- kms key for volume/storage encryption
+harden network + iam
 
 ---
 

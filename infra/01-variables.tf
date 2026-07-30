@@ -39,12 +39,12 @@ variable "aws_region" {
 # VPC
 # ##############################
 variable "vpc_id" {
-  description = ""
+  description = "Existing VPC to place SageMaker resources in."
   type        = string
 }
 
-variable "subnet_ids" {
-  description = ""
+variable "public_subnet_ids" {
+  description = "Subnets for SageMaker. Must have a route to an IGW or NAT."
   type        = list(string)
 }
 
