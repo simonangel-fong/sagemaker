@@ -80,6 +80,40 @@ variable "notebook_volume_size" {
 }
 
 # ##############################
+# Endpoint
+# ##############################
+# Output of a training job, e.g.
+# s3://<bucket>/models/mnist-logreg-<ts>/output/model.tar.gz
+variable "model_artifact_uri" {
+  description = "S3 URI of the model.tar.gz to serve. Empty disables the endpoint."
+  type        = string
+  default     = ""
+}
+
+variable "inference_image" {
+  description = "ECR URI of the serving container."
+  type        = string
+  default     = "341280168497.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
+}
+
+variable "serverless_memory_mb" {
+  description = "Memory for serverless inference."
+  type        = number
+  default     = 2048
+
+  validation {
+    condition     = contains([1024, 2048, 3072, 4096, 5120, 6144], var.serverless_memory_mb)
+    error_message = "serverless_memory_mb must be one of 1024, 2048, 3072, 4096, 5120, 6144."
+  }
+}
+
+variable "serverless_max_concurrency" {
+  description = "Concurrent invocations before throttling."
+  type        = number
+  default     = 2
+}
+
+# ##############################
 # Git
 # ##############################
 variable "git_repository_url" {

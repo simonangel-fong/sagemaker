@@ -25,3 +25,8 @@ output "training_output_uri" {
   description = "S3 prefix where job artifacts land."
   value       = "s3://${aws_s3_bucket.data.id}/models/"
 }
+
+output "endpoint_name" {
+  description = "Serverless inference endpoint, null when disabled."
+  value       = one(aws_sagemaker_endpoint.this[*].name)
+}
