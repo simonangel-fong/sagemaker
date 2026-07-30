@@ -37,6 +37,36 @@ data "aws_iam_policy_document" "training_job" {
       values   = ["sagemaker.amazonaws.com"]
     }
   }
+
+  # SageMaker attaches an ENI to the training instance. These are the
+  # permissions the SDK validates a training role for.
+  statement {
+    sid    = "TrainingJobNetworking"
+    effect = "Allow"
+
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:CreateNetworkInterfacePermission",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DeleteNetworkInterfacePermission",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeDhcpOptions",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups",
+    ]
+
+    resources = ["*"]
+  }
+
+  # The namespace-conditioned grant in 07-iam.tf does not satisfy the SDK's
+  # role validation, which checks the action unconditionally.
+  statement {
+    sid       = "TrainingJobMetrics"
+    effect    = "Allow"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "training_job" {
