@@ -32,7 +32,7 @@ variable "tags" {
 variable "aws_region" {
   description = "AWS region to deploy into."
   type        = string
-  default     = "us-east-1"
+  default     = "ca-central-1"
 }
 
 # ##############################
@@ -41,11 +41,22 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "Existing VPC to place SageMaker resources in."
   type        = string
+
+  validation {
+    condition     = can(regex("^vpc-[0-9a-f]{8,17}$", var.vpc_id))
+    error_message = "vpc_id must look like vpc-xxxxxxxx."
+  }
 }
 
+# Must reach an IGW or NAT: the notebook pulls pip packages and datasets.
 variable "public_subnet_ids" {
   description = "Subnets for SageMaker. Must have a route to an IGW or NAT."
   type        = list(string)
+
+  validation {
+    condition     = length(var.public_subnet_ids) > 0
+    error_message = "public_subnet_ids must not be empty."
+  }
 }
 
 # ##############################

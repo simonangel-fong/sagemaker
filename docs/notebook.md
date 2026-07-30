@@ -63,21 +63,32 @@ teardown
 
 ---
 
+08
+training job
+
+- move training out of the notebook onto ephemeral compute
+- src/train.py: read SM_CHANNEL_TRAIN, write SM_MODEL_DIR
+- iam: CreateTrainingJob + iam:PassRole on the execution role
+- submit with the prebuilt SKLearn estimator, fit on s3://.../raw/
+- model artifact lands in s3://.../models/, notebook not needed while it runs
+
+---
+
 ## Development
 
 - Init
 
 ```sh
-terraform -chdir=infra init -backend-config=backend.hcl
-terraform -chdir=infra fmt && terraform -chdir=infra validate
+terraform -chdir=infra/mlops init -backend-config=backend.hcl
+terraform -chdir=infra/mlops fmt && terraform -chdir=infra/mlops validate
 
-terraform -chdir=infra apply -auto-approve
+terraform -chdir=infra/mlops apply -auto-approve
+terraform -chdir=infra/mlops destroy -auto-approve
 ```
 
 
 ## Notebook
 
 ```sh
-terraform -chdir=infra output -raw notebook_login_command
-# aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name sagemaker-notebook-dev-notebook --region ca-central-1 --query AuthorizedUrl --output text
+terraform -chdir=infra/mlops output -raw notebook_login_command
 ```

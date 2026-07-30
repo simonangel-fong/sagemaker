@@ -3,6 +3,7 @@
 # ##############################
 # Security group
 # ##############################
+# Egress only: access is via the presigned URL, not inbound network.
 resource "aws_security_group" "notebook" {
   name        = "${local.prefix_name}-notebook-sg"
   description = "SageMaker notebook instance"
@@ -24,9 +25,7 @@ resource "aws_security_group" "notebook" {
 # ##############################
 # Code repository
 # ##############################
-# Cloned into the notebook home dir on start, so .ipynb files in the repo are
-# available without recreating them. Public repo: no secret_arn, so pull works
-# but push does not.
+# Cloned on instance start. No secret_arn, so pull works but push does not.
 resource "aws_sagemaker_code_repository" "this" {
   code_repository_name = "${local.prefix_name}-repo"
 
