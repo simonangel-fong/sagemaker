@@ -235,3 +235,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 # NOTE: .terraform.lock.hcl is intentionally committed (pins provider versions)
+
+data/
