@@ -41,16 +41,16 @@ resource "aws_sagemaker_code_repository" "this" {
 # ##############################
 resource "aws_sagemaker_notebook_instance" "this" {
   name = "${local.prefix_name}-notebook"
-  
+
   # instance
   instance_type = var.notebook_instance_type
   volume_size   = var.notebook_volume_size
-  
+
   # network
   subnet_id              = var.public_subnet_ids[0]
   security_groups        = [aws_security_group.notebook.id]
   direct_internet_access = "Enabled"
-  
+
   # access
   role_arn    = aws_iam_role.sagemaker_execution.arn
   root_access = "Enabled"

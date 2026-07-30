@@ -44,11 +44,13 @@ deploy
 ---
 
 06
-verify
-
-- open presigned notebook url from output
-- run a test notebook cell (boto3 / sagemaker sdk)
-- confirm s3 access and cloudwatch logs
+- connect current repo
+  - aws_sagemaker_code_repository -> default_code_repository
+  - cloned on instance start, git pull for later commits
+- notebooks/train.ipynb: mnist end to end
+  - download mnist, upload to s3 data bucket
+  - train logistic regression on the instance
+  - save model to s3, reload and verify
 
 ---
 
