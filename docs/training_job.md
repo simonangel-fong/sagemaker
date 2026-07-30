@@ -41,8 +41,11 @@ print(f"test_accuracy={acc:.4f}")   # scraped from CloudWatch
 ## Use
 
 ```sh
-python -m venv .venv && .venv\Scripts\activate
-pip install sagemaker-train      # SDK needs Python 3.10-3.12
+# init
+python -m venv .venv
+.venv\Scripts\activate
+
+pip install sagemaker-train   
 
 python src/submit_job.py \
   --bucket (terraform -chdir=infra/mlops output -raw data_bucket) \

@@ -57,8 +57,8 @@ def parse_args():
     p.add_argument("--role", required=True, help="terraform output execution_role_arn")
     p.add_argument("--instance-type", default="ml.m5.large")
     p.add_argument("--image", default=SKLEARN_IMAGE)
-    p.add_argument("--max-iter", type=int, default=1000)
-    p.add_argument("--n-samples", type=int, default=10_000)
+    p.add_argument("--n-estimators", type=int, default=100)
+    p.add_argument("--min-samples-leaf", type=int, default=1)
     p.add_argument("--no-wait", action="store_true", help="submit and return")
     return p.parse_args()
 
@@ -69,7 +69,7 @@ def main():
     trainer = ModelTrainer(
         training_image=args.image,
         role=args.role,
-        base_job_name="mnist-logreg",
+        base_job_name="bike-rf",
         source_code=SourceCode(
             source_dir="src",
             entry_script="train.py",
@@ -79,8 +79,8 @@ def main():
             instance_count=1,
         ),
         hyperparameters={
-            "max-iter": args.max_iter,
-            "n-samples": args.n_samples,
+            "n-estimators": args.n_estimators,
+            "min-samples-leaf": args.min_samples_leaf,
         },
         output_data_config=OutputDataConfig(
             s3_output_path=f"s3://{args.bucket}/models/",
@@ -91,7 +91,7 @@ def main():
         input_data_config=[
             InputData(
                 channel_name="train",
-                data_source=f"s3://{args.bucket}/raw/mnist/",
+                data_source=f"s3://{args.bucket}/raw/bike/",
             )
         ],
         wait=not args.no_wait,

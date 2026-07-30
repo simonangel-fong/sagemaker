@@ -1,4 +1,4 @@
-"""MNIST training entry point for a SageMaker training job.
+"""Bike sharing demand training entry point for a SageMaker training job.
 
 SageMaker mounts the S3 channel locally and expects the model written to
 SM_MODEL_DIR; it tars that directory and uploads it. Nothing here talks to S3
@@ -11,18 +11,24 @@ from pathlib import Path
 
 import joblib
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+TARGET = "cnt"
+
+# casual + registered sum to cnt in every row, so they leak the target.
+# instant is a row index; dteday is superseded by the calendar columns.
+DROP = ["instant", "dteday", "casual", "registered", TARGET]
 
 
 def parse_args():
     p = argparse.ArgumentParser()
 
     # Hyperparameters arrive as command line flags.
-    p.add_argument("--max-iter", type=int, default=1000)
-    p.add_argument("--n-samples", type=int, default=10_000)
-    p.add_argument("--test-size", type=float, default=0.2)
+    p.add_argument("--n-estimators", type=int, default=100)
+    p.add_argument("--max-depth", type=int, default=None)
+    p.add_argument("--min-samples-leaf", type=int, default=1)
     p.add_argument("--random-state", type=int, default=42)
 
     # Paths come from the environment SageMaker sets up.
@@ -33,40 +39,50 @@ def parse_args():
 
 
 def load(channel_dir):
-    files = sorted(Path(channel_dir).glob("*.npz"))
+    files = sorted(Path(channel_dir).glob("*.csv"))
     if not files:
-        raise FileNotFoundError(f"no .npz found in {channel_dir}")
+        raise FileNotFoundError(f"no .csv found in {channel_dir}")
 
-    with np.load(files[0]) as data:
-        return data["X"], data["y"]
+    return pd.read_csv(files[0])
 
 
 def main():
     args = parse_args()
 
-    X, y = load(args.train)
-    print(f"loaded {X.shape[0]} rows from {args.train}", flush=True)
+    df = load(args.train)
+    print(f"loaded {len(df)} rows from {args.train}", flush=True)
 
-    n = min(args.n_samples, X.shape[0])
-    X_train, X_test, y_train, y_test = train_test_split(
-        X[:n],
-        y[:n],
-        test_size=args.test_size,
+    features = [c for c in df.columns if c not in DROP]
+
+    # Split by time: train on 2011, test on 2012. A random split would let the
+    # model see hours adjacent to the ones it is scored on.
+    train, test = df[df.yr == 0], df[df.yr == 1]
+    print(f"train={len(train)} test={len(test)} features={len(features)}", flush=True)
+
+    model = RandomForestRegressor(
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        min_samples_leaf=args.min_samples_leaf,
         random_state=args.random_state,
-        stratify=y[:n],
+        n_jobs=-1,
     )
+    model.fit(train[features], train[TARGET])
 
-    clf = LogisticRegression(max_iter=args.max_iter)
-    clf.fit(X_train, y_train)
+    pred = model.predict(test[features])
+    rmse = np.sqrt(mean_squared_error(test[TARGET], pred))
 
-    acc = accuracy_score(y_test, clf.predict(X_test))
-
-    # Printed in this format so the metric can be scraped by a metric_definitions
-    # regex if this job is ever used for tuning.
-    print(f"test_accuracy={acc:.4f}", flush=True)
+    # Printed in this format so the metrics can be scraped by a
+    # metric_definitions regex if this job is ever used for tuning.
+    print(f"rmse={rmse:.4f}", flush=True)
+    print(f"mae={mean_absolute_error(test[TARGET], pred):.4f}", flush=True)
+    print(f"r2={r2_score(test[TARGET], pred):.4f}", flush=True)
 
     out = Path(args.model_dir) / "model.joblib"
-    joblib.dump(clf, out)
+    joblib.dump(model, out)
+
+    # Saved alongside the model so inference reconstructs the column order.
+    joblib.dump(features, Path(args.model_dir) / "features.joblib")
+
     print(f"model written to {out}", flush=True)
 
 
