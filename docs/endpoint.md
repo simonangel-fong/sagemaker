@@ -19,11 +19,11 @@ nothing while idle.
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| `src/inference.py` | The four container hooks |
-| `src/invoke_endpoint.py` | Test client |
-| `10-endpoint.tf` | Model, endpoint config, endpoint |
+| File                     | Purpose                          |
+| ------------------------ | -------------------------------- |
+| `src/inference.py`       | The four container hooks         |
+| `src/invoke_endpoint.py` | Test client                      |
+| `10-endpoint.tf`         | Model, endpoint config, endpoint |
 
 ## Key contract
 

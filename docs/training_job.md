@@ -19,10 +19,10 @@ script, uploads the model, and terminates. Nothing bills between jobs.
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| `src/train.py` | Entry point run inside the container |
-| `src/submit_job.py` | Submits the job |
+| File                 | Purpose                                       |
+| -------------------- | --------------------------------------------- |
+| `src/train.py`       | Entry point run inside the container          |
+| `src/submit_job.py`  | Submits the job                               |
 | `09-training-job.tf` | IAM to create jobs + pass the role, log group |
 
 ## Key contract

@@ -1,10 +1,9 @@
 # outputs.tf
 
-# Notebook instance is disabled in 08-sagemaker-notebook.tf.
-# output "notebook_login_command" {
-#   description = "CLI command that returns a presigned login URL."
-#   value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
-# }
+output "notebook_login_command" {
+  description = "CLI command that returns a presigned login URL."
+  value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
+}
 
 output "data_bucket" {
   description = "S3 bucket the notebook can read/write."
