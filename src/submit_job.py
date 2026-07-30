@@ -8,10 +8,41 @@ ModelTrainer, which takes an explicit image URI rather than a framework version.
 """
 
 import argparse
+import os
 
 from sagemaker.core.shapes.shapes import OutputDataConfig
 from sagemaker.core.training.configs import Compute, InputData, SourceCode
 from sagemaker.train.model_trainer import ModelTrainer
+
+
+def _force_lf_train_script():
+    """Work around an SDK bug that breaks training jobs launched from Windows.
+
+    ModelTrainer._prepare_train_script writes sm_train.sh with open(..., "w"),
+    so on Windows every \\n becomes \\r\\n. The Linux container then fails with
+    "$'\\r': command not found". Rewrite the file with LF after the SDK emits it.
+    """
+    if os.linesep == "\n":
+        return
+
+    original = ModelTrainer._prepare_train_script
+
+    def patched(self, tmp_dir, *a, **kw):
+        result = original(self, tmp_dir, *a, **kw)
+
+        path = os.path.join(tmp_dir.name, "sm_train.sh")
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                data = f.read()
+            with open(path, "wb") as f:
+                f.write(data.replace(b"\r\n", b"\n"))
+
+        return result
+
+    ModelTrainer._prepare_train_script = patched
+
+
+_force_lf_train_script()
 
 # Prebuilt scikit-learn container. The registry account differs per region;
 # this is ca-central-1.

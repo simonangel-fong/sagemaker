@@ -100,7 +100,7 @@ terraform -chdir=infra/mlops output -raw notebook_login_command
 ```sh
 python -m venv .venv
 
-pip install sagemaker
+pip install sagemaker-train
 
 python src/submit_job.py --bucket (terraform -chdir=infra/mlops output -raw data_bucket) --role (terraform -chdir=infra/mlops output -raw execution_role_arn)
 
