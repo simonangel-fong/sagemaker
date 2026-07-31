@@ -154,6 +154,8 @@ terraform -chdir=infra/domain fmt && terraform -chdir=infra/domain validate
 
 terraform -chdir=infra/domain apply -auto-approve
 
+terraform -chdir=infra/domain destroy -auto-approve
+
 
 ```
 
