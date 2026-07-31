@@ -4,3 +4,8 @@ aws_region = "ca-central-1"
 
 vpc_id            = "vpc-xxxxxxxx"
 public_subnet_ids = ["subnet-xxxxxxxx"]
+
+space_instance_type = "ml.t3.medium"
+space_volume_size   = 5
+
+git_repository_url = "https://github.com/owner/repo.git"

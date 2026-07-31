@@ -53,11 +53,17 @@ one persona through the full lifecycle. bob comes after.
 
 4 train
 
-- grant: s3 rw on the bucket -- policy 1
-- launch jupyterlab space, port notebooks/train.ipynb
-- read raw/, write featured/ + model/
-- explore: instance switch, space lifecycle, terminal
-- verify: artifact lands in model/
+- tf: policy 1 -- s3 rw + training job + passrole (09-iam-data.tf)
+- tf: lcc clone script + alice's private space, ml.t3.medium (10-space.tf)
+- studio: start the jupyterlab app on that space (manual, billed)
+- repo is already cloned by the lcc -- open notebooks/studio_train.ipynb
+- set BUCKET, run all: raw/ -> featured/ -> model/
+- explore: instance switch, space stop/start, terminal, git ui
+- verify: rmse ~126, r2 ~0.63, model.joblib in model/
+
+note: tf declares the space, not the running app. starting the app
+is manual and is the part that bills -- stop it when done, the ebs
+volume persists.
 
 ---
 
@@ -136,6 +142,8 @@ terraform -chdir=infra/domain init -backend-config=backend.hcl -reconfigure
 terraform -chdir=infra/domain fmt && terraform -chdir=infra/domain validate
 
 terraform -chdir=infra/domain apply -auto-approve
+
+
 ```
 
 upload data (phase 2, after apply)

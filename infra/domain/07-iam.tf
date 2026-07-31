@@ -66,11 +66,15 @@ data "aws_iam_policy_document" "studio_access" {
       "sagemaker:CreateApp",
       "sagemaker:UpdateApp",
       "sagemaker:DeleteApp",
+      # Studio stamps its own tags on the app it creates, so CreateApp
+      # fails without this even though nothing here asks for tags.
+      "sagemaker:AddTags",
     ]
 
     resources = [
       "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:space/${aws_sagemaker_domain.this.id}/*",
       "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:app/${aws_sagemaker_domain.this.id}/*",
+      "arn:aws:sagemaker:${var.aws_region}:${data.aws_caller_identity.current.account_id}:user-profile/${aws_sagemaker_domain.this.id}/*",
     ]
   }
 

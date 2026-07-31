@@ -16,6 +16,15 @@ resource "aws_sagemaker_domain" "this" {
 
   default_user_settings {
     execution_role = aws_iam_role.alice.arn
+
+    # A space can only reference an LCC the domain has whitelisted here.
+    jupyter_lab_app_settings {
+      default_resource_spec {
+        instance_type = var.space_instance_type
+      }
+
+      lifecycle_config_arns = [aws_sagemaker_studio_lifecycle_config.clone_repo.arn]
+    }
   }
 
   # Study stack: drop the EFS volume on destroy so it stops costing.

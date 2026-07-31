@@ -58,3 +58,31 @@ variable "public_subnet_ids" {
     error_message = "public_subnet_ids must not be empty."
   }
 }
+
+# ##############################
+# Studio Space
+# ##############################
+variable "space_instance_type" {
+  description = "Default instance type for the JupyterLab app in a space."
+  type        = string
+  default     = "ml.t3.medium"
+}
+
+variable "space_volume_size" {
+  description = "Size in GB of the space EBS volume."
+  type        = number
+  default     = 5
+
+  validation {
+    condition     = var.space_volume_size >= 5 && var.space_volume_size <= 16384
+    error_message = "space_volume_size must be between 5 and 16384 GB."
+  }
+}
+
+# ##############################
+# Git
+# ##############################
+variable "git_repository_url" {
+  description = "HTTPS URL offered in the JupyterLab clone menu."
+  type        = string
+}

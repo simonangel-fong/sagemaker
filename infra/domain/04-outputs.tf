@@ -26,4 +26,9 @@ output "studio_login_command" {
   value       = "aws sagemaker create-presigned-domain-url --domain-id ${aws_sagemaker_domain.this.id} --user-profile-name ${aws_sagemaker_user_profile.alice.user_profile_name} --region ${var.aws_region} --query AuthorizedUrl --output text"
 }
 
-# Phase 4 adds the S3 data policy. Phase 9 adds bob.
+output "alice_space_name" {
+  description = "Alice's private JupyterLab space. Start the app from the Studio UI."
+  value       = aws_sagemaker_space.alice.space_name
+}
+
+# Phase 9 adds bob.
