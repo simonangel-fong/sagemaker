@@ -69,9 +69,15 @@ volume persists.
 
 5 evaluate
 
-- eval on holdout, capture rmse / r2
+- no tf. notebooks/studio_eval.ipynb, reads featured/
+- baseline (predict the mean) so rmse has something to beat
+- two runs: A leaf5 (phase 4 model), B leaf1 (deeper trees)
+- write model/eval.json -- phase 6 replays these into mlflow
 - explore: notebook vs training job, cost of each
-- verify: metrics reproducible across two runs
+- verify: refit gives identical metrics, assert in the notebook
+
+expected: baseline rmse 227.8 / A 126.3 r2 .634 12MB
+          B 125.2 r2 .641 70.7MB -- 0.9% better, 6x the artifact
 
 ---
 
