@@ -4,6 +4,18 @@
 # Kept separate from the studio-access policy so each phase's grant is
 # visible on its own. Attaches to alice only; bob gets a scoped copy in
 # phase 9.
+#
+# Kept deliberately under AmazonSageMakerFullAccess rather than dropped.
+# That policy scopes its object actions to arn:aws:s3:::*sagemaker* --
+# a name-substring match that this bucket happens to satisfy. Leaning on
+# that as the only grant on the data would mean a rename silently
+# revokes access, so the explicit bucket ARN below stays as the real
+# contract. It is also the statement bob's scoped copy narrows in
+# phase 9.
+#
+# The training-job and PassRole statements ARE covered by FullAccess now.
+# They stay because they document what phase 4 needed on its own, and
+# because bob inherits this shape rather than the managed policy.
 
 data "aws_iam_policy_document" "data_access" {
   # ListBucket is a bucket-level action, the rest are object-level.

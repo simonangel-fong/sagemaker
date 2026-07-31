@@ -18,10 +18,44 @@ resource "aws_iam_role" "alice" {
 }
 
 # ##############################
+# Alice is the admin
+# ##############################
+# AmazonSageMakerFullAccess, not an enumerated policy.
+#
+# The hand-rolled version below was written against the API calls the SDK
+# makes. The Studio console calls a much wider surface -- Search to
+# enumerate resources, DescribeLogGroups to read job logs, ListHubs to
+# render the Models page -- and none of those show up until a panel
+# fails. Chasing them one error at a time is how phases 6 and 7 went, and
+# the list never converges.
+#
+# The persona settles it: alice is the domain admin. AWS ships a managed
+# policy for exactly that, and it tracks new Studio surfaces as AWS adds
+# them.
+#
+# The tradeoff is real and worth naming: this grants s3:* on any bucket
+# with "sagemaker" in the name, plus PassRole and ECR. That is right for
+# an admin in a study account and wrong for a data scientist in a shared
+# one -- which is the point of phase 9. Bob keeps enumerated, scoped
+# policies, and the contrast between the two roles is the lesson.
+#
+# The data bucket does NOT match the managed policy's s3 wildcard, so
+# the scoped grant in 09-iam-data.tf is still doing real work.
+resource "aws_iam_role_policy_attachment" "alice_sagemaker_full" {
+  role       = aws_iam_role.alice.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+}
+
+# ##############################
 # Studio access
 # ##############################
-# Just enough to open Studio and run a space. No data access yet --
-# phase 4 attaches S3 as a separate policy.
+# Superseded for alice by the managed policy above, and kept for two
+# reasons: it documents the actual floor for opening Studio, and phase 9
+# attaches it to bob, who does not get FullAccess.
+#
+# The KMS statement is the part the managed policy does not cover -- the
+# domain EFS home dir is encrypted with a customer key, and without a
+# grant on it the app hangs in Pending.
 data "aws_iam_policy_document" "studio_access" {
   # Studio calls these on load to render the launcher.
   statement {

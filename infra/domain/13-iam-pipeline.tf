@@ -1,6 +1,11 @@
 # iam-pipeline.tf
 #
-# Phase 7, policy 3: author and run pipelines, and register the result.
+# Phase 7, policy 3: read job logs, plus the model package group.
+#
+# This started as the full pipeline grant. Alice getting
+# AmazonSageMakerFullAccess in 07-iam.tf made most of it redundant --
+# what remains is the CloudWatch read side, which no SageMaker managed
+# policy covers.
 #
 # The pipeline definition itself is not here. Terraform owns the durable,
 # permissioned things -- this policy and the model package group below;
@@ -26,95 +31,32 @@ resource "aws_sagemaker_model_package_group" "bike" {
   model_package_group_description = "Bike sharing demand models. Versions land pending approval."
 }
 
+# Every sagemaker:* grant this policy used to carry -- pipelines,
+# processing jobs, Search, the registry, PassRole -- is inside
+# AmazonSageMakerFullAccess, which alice now has (07-iam.tf). They were
+# added here one console error at a time, and keeping them would only
+# obscure which grants are load-bearing.
+#
+# What is left is the CloudWatch read surface. FullAccess (v29) does
+# carry logs:Describe* and logs:GetLogEvents, so the ListHubs-era
+# DescribeLogGroups grant is now redundant -- but it stops there.
+# FilterLogEvents and the Insights query pair are not in it, and those
+# are what the Studio log viewer uses to search within a stream.
+#
+# Scoped to /aws/sagemaker rather than "*", since unlike Search these
+# actions do take a resource.
+#
+# Phase 9 gives bob the enumerated version of the rest.
 data "aws_iam_policy_document" "pipeline_access" {
-  # Authoring and running. Describe/List are what the Studio Pipelines UI
-  # calls to render the DAG and its execution history.
   statement {
-    sid    = "PipelineLifecycle"
+    sid    = "CloudWatchLogsSearch"
     effect = "Allow"
 
     actions = [
-      "sagemaker:CreatePipeline",
-      "sagemaker:UpdatePipeline",
-      "sagemaker:DeletePipeline",
-      "sagemaker:DescribePipeline",
-      "sagemaker:DescribePipelineDefinitionForExecution",
-      "sagemaker:ListPipelines",
-      "sagemaker:StartPipelineExecution",
-      "sagemaker:StopPipelineExecution",
-      "sagemaker:DescribePipelineExecution",
-      "sagemaker:ListPipelineExecutions",
-      "sagemaker:ListPipelineExecutionSteps",
-      "sagemaker:ListPipelineParametersForExecution",
-      # upsert() tags the pipeline, and the console stamps its own tags
-      # on executions.
-      "sagemaker:AddTags",
-      "sagemaker:ListTags",
-    ]
-
-    resources = ["*"]
-  }
-
-  # The Studio Pipelines UI does not call ListPipelines -- it queries the
-  # Search API, which is how the console enumerates every resource type.
-  # Without this the panel renders an error instead of the dag, even
-  # though the pipeline exists and runs fine from the sdk.
-  #
-  # Search takes no resource scope: it is account-wide by design, and the
-  # results are filtered by what the caller can otherwise see.
-  statement {
-    sid    = "StudioResourceSearch"
-    effect = "Allow"
-
-    actions = [
-      "sagemaker:Search",
-      "sagemaker:GetSearchSuggestions",
-    ]
-
-    resources = ["*"]
-  }
-
-  # Phase 4 granted training jobs only. The preprocess and evaluate steps
-  # run as processing jobs, which are a separate action family -- without
-  # this the pipeline fails on its first step.
-  statement {
-    sid    = "ProcessingJobs"
-    effect = "Allow"
-
-    actions = [
-      "sagemaker:CreateProcessingJob",
-      "sagemaker:DescribeProcessingJob",
-      "sagemaker:StopProcessingJob",
-      "sagemaker:ListProcessingJobs",
-    ]
-
-    resources = ["*"]
-  }
-
-  # Reading job logs back. Phase 3 granted the write side -- the training
-  # container creating its own log stream and putting events. Opening the
-  # Logs tab on a finished job is the read side, and needs both.
-  #
-  # DescribeLogGroups takes no resource scope: it enumerates, so there is
-  # nothing to name. The Get/FilterLogEvents calls that follow it are
-  # scoped to the sagemaker log groups.
-  statement {
-    sid       = "CloudWatchLogsDiscovery"
-    effect    = "Allow"
-    actions   = ["logs:DescribeLogGroups"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "CloudWatchLogsRead"
-    effect = "Allow"
-
-    actions = [
-      "logs:DescribeLogStreams",
-      "logs:GetLogEvents",
       "logs:FilterLogEvents",
       "logs:StartQuery",
       "logs:GetQueryResults",
+      "logs:StopQuery",
     ]
 
     resources = [
@@ -122,51 +64,11 @@ data "aws_iam_policy_document" "pipeline_access" {
       "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/sagemaker/*:log-stream:*",
     ]
   }
-
-  # The register step creates a Model and a versioned package under the
-  # group above.
-  statement {
-    sid    = "ModelRegistry"
-    effect = "Allow"
-
-    actions = [
-      "sagemaker:CreateModel",
-      "sagemaker:DescribeModel",
-      "sagemaker:DeleteModel",
-      "sagemaker:CreateModelPackage",
-      "sagemaker:DescribeModelPackage",
-      "sagemaker:UpdateModelPackage",
-      "sagemaker:ListModelPackages",
-      "sagemaker:CreateModelPackageGroup",
-      "sagemaker:DescribeModelPackageGroup",
-      "sagemaker:ListModelPackageGroups",
-    ]
-
-    resources = ["*"]
-  }
-
-  # Every step runs as a SageMaker-managed container that assumes alice's
-  # role. Policy 1 already grants this for training jobs; the condition is
-  # on the service, not the job type, so it covers processing and the
-  # pipeline itself too. Repeated here only so this phase's grant reads
-  # completely on its own -- IAM unions the two, it is not a conflict.
-  statement {
-    sid       = "PassRoleToPipelineSteps"
-    effect    = "Allow"
-    actions   = ["iam:PassRole"]
-    resources = [aws_iam_role.alice.arn]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PassedToService"
-      values   = ["sagemaker.amazonaws.com"]
-    }
-  }
 }
 
 resource "aws_iam_policy" "pipeline_access" {
   name        = "${local.prefix_name}-pipeline-access"
-  description = "Author and run SageMaker pipelines, and register model versions."
+  description = "Read job logs back. The SageMaker grants come from AmazonSageMakerFullAccess."
   policy      = data.aws_iam_policy_document.pipeline_access.json
 }
 
