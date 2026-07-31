@@ -23,18 +23,13 @@ data "aws_iam_policy_document" "mlflow_access" {
   # The Studio sidebar enumerates apps before opening one, and List* has
   # no resource to scope to.
   #
-  # Wildcarded rather than enumerated: the MLflow app API postdates aws
-  # cli 2.19.1, so the exact action names could not be confirmed here and
-  # IAM rejects unknown action names outright at policy-creation time.
-  # This matches Mlflow{App,Apps} on the sagemaker prefix only.
+  # Trailing wildcard: CreatePresignedMlflowAppUrl ends in Url, not App,
+  # so an anchored "*MlflowApp" misses it.
   statement {
     sid    = "MlflowAppDiscovery"
     effect = "Allow"
 
-    actions = [
-      "sagemaker:*MlflowApp",
-      "sagemaker:*MlflowApps",
-    ]
+    actions = ["sagemaker:*MlflowApp*"]
 
     resources = ["*"]
   }
