@@ -142,9 +142,58 @@ alice's stack is done and working. bob tests sharing + isolation.
 
 9 onboard bob
 
-- bob role: separate role, s3 scoped to own prefix
-- user profile: bob
-- verify: bob opens studio; denied on alice's prefix
+- tf: bob role + scoped policy, profile, private space (15-bob.tf)
+- reuses the enumerated studio-access policy from phase 3 -- which is
+  what it was kept for once alice moved to AmazonSageMakerFullAccess
+- profile sets execution_role explicitly: the domain default points at
+  alice, so without it bob inherits her role and every isolation check
+  passes for the wrong reason
+- verify: bob opens studio; reads alice's work; cannot overwrite it
+
+note: the line is not "bob can do less of everything". he does the same
+work alice does. three things are his alone to not do -- overwrite her
+outputs, approve a version, deploy.
+
+reads on featured/ and model/ are allowed on purpose. phase 10 has him
+training a variant of alice's model, which only means anything if both
+start from the same featured/ frame.
+
+|                                        | bob      | alice |
+| -------------------------------------- | -------- | ----- |
+| read raw/                              | yes      | yes   |
+| read featured/, model/                 | yes      | yes   |
+| read mlflow-app/ artifacts             | yes      | yes   |
+| write users/bob/                       | yes      | n/a   |
+| write featured/, model/, mlflow-app/   | **deny** | yes   |
+| training + processing jobs             | yes      | yes   |
+| author + run pipelines                 | yes      | yes   |
+| mlflow: read runs, log own             | yes      | yes   |
+| registry: list, describe, register     | yes      | yes   |
+| registry: approve (UpdateModelPackage) | **deny** | yes   |
+| registry: delete version or group      | **deny** | yes   |
+| deploy (Create/Update/DeleteEndpoint)  | **deny** | yes   |
+| studio: Search, job logs, own space    | yes      | yes   |
+
+the denies are explicit, not implicit. phase 10 verifies "bob cannot
+approve", and a default deny reads the same as an oversight in the error
+message. explicit also survives someone attaching a broader policy later.
+
+the s3 deny covers writes only, not reads -- the boundary that matters is
+that bob cannot clobber alice's outputs, which is exactly what the phase
+7 preprocess bug did by accident.
+
+```sh
+# what bob can and cannot do, without opening studio
+ROLE=$(terraform -chdir=infra/domain output -raw bob_role_arn)
+aws iam simulate-principal-policy --policy-source-arn "$ROLE" \
+  --action-names sagemaker:UpdateModelPackage \
+  --query 'EvaluationResults[0].EvalDecision' --output text
+# explicitDeny
+
+# sagemaker-mlflow:* is not modelled by the simulator -- it returns
+# implicitDeny for alice too, whose access demonstrably works. studio is
+# the only real test for that one.
+```
 
 ---
 
@@ -262,3 +311,5 @@ terraform -chdir=infra/domain output -raw bob_login_command
 
 
 ```
+
+- Bob
