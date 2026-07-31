@@ -1,0 +1,6 @@
+project    = "sagemaker-domain"
+env        = "dev"
+aws_region = "ca-central-1"
+
+vpc_id            = "vpc-xxxxxxxx"
+public_subnet_ids = ["subnet-xxxxxxxx"]

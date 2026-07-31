@@ -1,0 +1,5 @@
+bucket       = "my-tfstate-bucket"
+key          = "sagemaker-domain/terraform.tfstate"
+region       = "region-name"
+encrypt      = true
+use_lockfile = true
