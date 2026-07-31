@@ -25,14 +25,18 @@ from sagemaker.core.shapes import (
     ProcessingS3Input,
     ProcessingS3Output,
 )
+# The workflow API is split across two packages: sagemaker.core.workflow
+# holds the value types a definition is built out of -- parameters,
+# conditions, property lookups -- and sagemaker.mlops.workflow holds the
+# step types and the pipeline itself.
+from sagemaker.core.workflow.conditions import ConditionLessThanOrEqualTo
+from sagemaker.core.workflow.functions import JsonGet
 from sagemaker.core.workflow.parameters import ParameterFloat, ParameterString
 from sagemaker.core.workflow.pipeline_context import PipelineSession
+from sagemaker.core.workflow.properties import PropertyFile
 from sagemaker.mlops.workflow.condition_step import ConditionStep
-from sagemaker.mlops.workflow.conditions import ConditionLessThanOrEqualTo
-from sagemaker.mlops.workflow.functions import JsonGet
 from sagemaker.mlops.workflow.model_step import ModelStep
 from sagemaker.mlops.workflow.pipeline import Pipeline
-from sagemaker.mlops.workflow.properties import PropertyFile
 from sagemaker.mlops.workflow.steps import CacheConfig, ProcessingStep, TrainingStep
 from sagemaker.serve.model_builder import ModelBuilder
 from sagemaker.train.configs import Compute, InputData, SourceCode
