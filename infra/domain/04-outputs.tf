@@ -46,4 +46,9 @@ output "model_package_group" {
   value       = aws_sagemaker_model_package_group.bike.model_package_group_name
 }
 
+output "endpoint_role_arn" {
+  description = "Execution role the endpoint runs as. Passed to the deploy step."
+  value       = aws_iam_role.endpoint.arn
+}
+
 # Phase 9 adds bob.
