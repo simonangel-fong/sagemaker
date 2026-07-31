@@ -83,11 +83,16 @@ expected: baseline rmse 227.8 / A 126.3 r2 .634 12MB
 
 6 mlflow tracking
 
-- create mlflow tracking server, artifact store -> s3
-- grant: mlflow access on that server arn -- policy 2
-- log params / metrics / model, compare runs
-- explore: run comparison ui, model registry handoff
-- verify: both runs from phase 5 show up
+- tf: tracking server + its own role, artifact store -> mlflow/ (11-mlflow.tf)
+- tf: policy 2 -- sagemaker: control plane + sagemaker-mlflow:* (12-iam-mlflow.tf)
+- notebooks/studio_mlflow.ipynb: set TRACKING_ARN, run all
+- log A and B with params / metrics / model, register A
+- explore: run comparison ui, parallel coordinates, registry handoff
+- verify: search_runs matches eval.json rmse exactly (assert in nb)
+
+note: the server bills hourly while it exists, idle or not -- the most
+expensive resource in this stack. stop it between sessions, runs and
+artifacts survive in s3.
 
 ---
 
@@ -166,4 +171,18 @@ aws s3 ls "s3://sagemaker-domain-dev-data-pqkx2l/raw/"
 # 2026-07-31 06:33:23    1156736 hour.csv
 
 
+```
+
+---
+
+## Debug
+
+```sh
+#  MLflow tracking servers take ~25 minutes
+
+aws sagemaker describe-mlflow-tracking-server \
+  --tracking-server-name sagemaker-domain-dev-mlflow \
+  --region ca-central-1 --query 'TrackingServerStatus'
+
+# "Creating"
 ```

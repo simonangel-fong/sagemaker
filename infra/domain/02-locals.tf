@@ -13,6 +13,10 @@ locals {
   # raw/ is the upload target, the other two are written by later phases.
   s3_prefixes = ["raw/", "featured/", "model/"]
 
+  # MLflow artifact store. Not in s3_prefixes: the tracking server
+  # creates it, and an empty marker object confuses the artifact listing.
+  mlflow_prefix = "mlflow/"
+
   default_tags = merge(
     {
       Project   = var.project
