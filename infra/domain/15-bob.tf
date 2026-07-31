@@ -3,10 +3,21 @@
 # Phase 9: the second persona.
 #
 # Alice is the domain admin and carries AmazonSageMakerFullAccess. Bob is
-# a data scientist: enumerated policies, S3 scoped to his own prefix, and
-# no path to the managed policy. The contrast between the two roles is
-# the point of this phase -- the isolation is only demonstrable because
-# one side is actually narrow.
+# a data scientist: enumerated policies rather than the managed one.
+#
+# The line is not "bob can do less of everything". He does the same work
+# alice does -- reads the shared data, runs jobs and pipelines, tracks
+# experiments in MLflow, registers model versions. Three things are his
+# alone to not do:
+#
+#   1. overwrite alice's outputs   (featured/, model/, mlflow-app/)
+#   2. approve a model version     (UpdateModelPackage)
+#   3. deploy                      (Create/UpdateEndpoint)
+#
+# Everything else is open, because a role that cannot read a teammate's
+# work or automate its own is not a data scientist -- and phase 10 is
+# about the handoff between two people who are both working, not about
+# one of them being locked out.
 #
 # Everything bob needs lives in this one file rather than being spread
 # across numbered policy files the way alice's was. Alice's grants were
@@ -34,12 +45,11 @@ resource "aws_iam_role_policy_attachment" "bob_studio_access" {
 # Alice's equivalent (09-iam-data.tf) grants the whole bucket. Bob gets
 # his own prefix for writes and read-only on the shared raw data.
 data "aws_iam_policy_document" "bob_data_access" {
-  # ListBucket is bucket-level, so the scoping has to be expressed as a
-  # condition on the key prefix rather than in the resource ARN.
-  # Without the condition bob could enumerate alice's objects even though
-  # he cannot read them.
+  # ListBucket is bucket-level, so the readable prefixes have to be
+  # expressed as a condition rather than in the resource ARN. Listing
+  # follows reading: bob can see what he can fetch.
   statement {
-    sid       = "S3ListOwnPrefixAndRaw"
+    sid       = "S3ListReadablePrefixes"
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
     resources = [aws_s3_bucket.data.arn]
@@ -51,6 +61,9 @@ data "aws_iam_policy_document" "bob_data_access" {
       values = [
         "${local.bob_prefix}*",
         "raw/*",
+        "featured/*",
+        "model/*",
+        "${local.mlflow_prefix}*",
         # The console sends an empty prefix when opening the bucket root.
         "",
       ]
@@ -64,13 +77,20 @@ data "aws_iam_policy_document" "bob_data_access" {
     resources = [aws_s3_bucket.data.arn]
   }
 
-  # Read the shared training data. Bob trains on the same raw/ alice does
-  # -- phase 10 has him fitting a variant of her model.
+  # Read the shared training data, and alice's feature and model output.
+  # Bob trains a variant of her model in phase 10, which means starting
+  # from the same featured/ frame -- re-deriving it would make the two
+  # runs incomparable, which is the whole point of the exercise.
   statement {
-    sid       = "S3ReadRaw"
-    effect    = "Allow"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.data.arn}/raw/*"]
+    sid     = "S3ReadSharedData"
+    effect  = "Allow"
+    actions = ["s3:GetObject"]
+
+    resources = [
+      "${aws_s3_bucket.data.arn}/raw/*",
+      "${aws_s3_bucket.data.arn}/featured/*",
+      "${aws_s3_bucket.data.arn}/model/*",
+    ]
   }
 
   # Read and write his own prefix.
@@ -87,19 +107,36 @@ data "aws_iam_policy_document" "bob_data_access" {
     resources = ["${aws_s3_bucket.data.arn}/${local.bob_prefix}*"]
   }
 
+  # The MLflow artifact store, read-only. Phase 10 has bob reading
+  # alice's runs and comparing them to his own -- the mlflow client
+  # fetches logged models and artifacts straight from S3, so a deny here
+  # makes the run comparison fail even with the API grant below.
+  statement {
+    sid       = "S3ReadMlflowArtifacts"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.data.arn}/${local.mlflow_prefix}*"]
+  }
+
   # An explicit Deny on the prefixes alice writes to.
   #
-  # Redundant on paper -- nothing above allows them, and IAM denies by
-  # default. It is here because phase 9's verify step is "bob is denied
-  # on alice's prefix", and a default deny and an explicit deny are
-  # indistinguishable from the error message. This makes the boundary a
-  # stated rule rather than an absence, and it survives someone later
-  # attaching a broader policy to bob.
+  # Read is not the concern -- a team that cannot see each other's work
+  # is not collaborating, and phase 10 is about the handoff. What bob
+  # must not do is overwrite alice's outputs, which is exactly what the
+  # phase 7 bug did by accident when the pipeline clobbered
+  # featured/hour.parquet.
+  #
+  # So: writes denied, reads allowed. Deny wins over any Allow, including
+  # a broader policy attached to bob later.
   statement {
-    sid    = "DenyAliceOutputs"
+    sid    = "DenyWritesToAliceOutputs"
     effect = "Deny"
 
-    actions = ["s3:*"]
+    actions = [
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:PutObjectAcl",
+    ]
 
     resources = [
       "${aws_s3_bucket.data.arn}/featured/*",
@@ -126,11 +163,11 @@ data "aws_iam_policy_document" "bob_data_access" {
     resources = [aws_kms_key.this.arn]
   }
 
-  # Same training-job grant alice got in phase 4. Bob trains a variant in
-  # phase 10; without this he can open Studio but not fit anything on
-  # managed compute.
+  # Jobs. Training and processing both, matching what alice needed for
+  # phases 4 and 7 -- bob runs the same pipeline in phase 10, and a
+  # pipeline whose first step is a processing job is useless without it.
   statement {
-    sid    = "SageMakerTrainingJobs"
+    sid    = "SageMakerJobs"
     effect = "Allow"
 
     actions = [
@@ -138,6 +175,159 @@ data "aws_iam_policy_document" "bob_data_access" {
       "sagemaker:DescribeTrainingJob",
       "sagemaker:StopTrainingJob",
       "sagemaker:ListTrainingJobs",
+      "sagemaker:CreateProcessingJob",
+      "sagemaker:DescribeProcessingJob",
+      "sagemaker:StopProcessingJob",
+      "sagemaker:ListProcessingJobs",
+    ]
+
+    resources = ["*"]
+  }
+
+  # Pipelines. Bob authors and runs his own; the isolation that matters
+  # is on the data he can read and the approval he cannot give, not on
+  # whether he is allowed to automate his work.
+  statement {
+    sid    = "Pipelines"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:CreatePipeline",
+      "sagemaker:UpdatePipeline",
+      "sagemaker:DescribePipeline",
+      "sagemaker:DescribePipelineDefinitionForExecution",
+      "sagemaker:ListPipelines",
+      "sagemaker:StartPipelineExecution",
+      "sagemaker:StopPipelineExecution",
+      "sagemaker:DescribePipelineExecution",
+      "sagemaker:ListPipelineExecutions",
+      "sagemaker:ListPipelineExecutionSteps",
+      "sagemaker:ListPipelineParametersForExecution",
+      "sagemaker:AddTags",
+      "sagemaker:ListTags",
+    ]
+
+    resources = ["*"]
+  }
+
+  # The registry, read plus register -- but NOT UpdateModelPackage.
+  #
+  # This is the real boundary of phase 10. Bob trains a variant and
+  # registers it as a new version; the version lands
+  # PendingManualApproval and he cannot move it. Alice approves. Deleting
+  # is hers too.
+  #
+  # CreateModel is here because registering through the SDK's ModelStep
+  # creates a Model resource on the way to the package.
+  statement {
+    sid    = "ModelRegistryReadAndRegister"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:CreateModel",
+      "sagemaker:DescribeModel",
+      "sagemaker:CreateModelPackage",
+      "sagemaker:DescribeModelPackage",
+      "sagemaker:ListModelPackages",
+      "sagemaker:DescribeModelPackageGroup",
+      "sagemaker:ListModelPackageGroups",
+    ]
+
+    resources = ["*"]
+  }
+
+  # Named explicitly rather than left to implicit deny. Phase 10 verifies
+  # "bob cannot approve", and an explicit deny is the difference between
+  # a stated rule and an oversight -- it also survives someone attaching
+  # a broader policy to him later.
+  statement {
+    sid    = "DenyApproval"
+    effect = "Deny"
+
+    actions = [
+      "sagemaker:UpdateModelPackage",
+      "sagemaker:DeleteModelPackage",
+      "sagemaker:DeleteModelPackageGroup",
+    ]
+
+    resources = ["*"]
+  }
+
+  # Deployment is alice's. Bob registers a candidate; putting it in front
+  # of traffic is a separate decision.
+  statement {
+    sid    = "DenyDeployment"
+    effect = "Deny"
+
+    actions = [
+      "sagemaker:CreateEndpoint",
+      "sagemaker:UpdateEndpoint",
+      "sagemaker:DeleteEndpoint",
+      "sagemaker:CreateEndpointConfig",
+      "sagemaker:DeleteEndpointConfig",
+    ]
+
+    resources = ["*"]
+  }
+
+  # Studio's console enumerates resources through Search, not through the
+  # List* calls above. Without it the Pipelines and Models panels error
+  # out -- the same gap that blocked alice in phase 7.
+  #
+  # Search is account-wide and takes no resource scope. It does not widen
+  # what bob can read: results are filtered by his other grants, and the
+  # denies above still apply.
+  statement {
+    sid    = "StudioResourceSearch"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:Search",
+      "sagemaker:GetSearchSuggestions",
+    ]
+
+    resources = ["*"]
+  }
+
+  # Read his own job logs. Alice needed the same grant in phase 7 -- the
+  # write side belongs to the container, the read side to the person
+  # opening the Logs tab.
+  statement {
+    sid       = "CloudWatchLogsDiscovery"
+    effect    = "Allow"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "CloudWatchLogsRead"
+    effect = "Allow"
+
+    actions = [
+      "logs:DescribeLogStreams",
+      "logs:GetLogEvents",
+      "logs:FilterLogEvents",
+      "logs:StartQuery",
+      "logs:GetQueryResults",
+      "logs:StopQuery",
+    ]
+
+    resources = [
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/sagemaker/*",
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/sagemaker/*:log-stream:*",
+    ]
+  }
+
+  # Pull the training and processing containers.
+  statement {
+    sid    = "EcrPullJobImages"
+    effect = "Allow"
+
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
     ]
 
     resources = ["*"]
@@ -166,6 +356,19 @@ resource "aws_iam_policy" "bob_data_access" {
 resource "aws_iam_role_policy_attachment" "bob_data_access" {
   role       = aws_iam_role.bob.name
   policy_arn = aws_iam_policy.bob_data_access.arn
+}
+
+# The same MLflow grant alice has. Phase 10 has bob reading her runs and
+# logging his own into the same experiment -- a shared tracking server
+# that only one person can reach is not tracking a team's work.
+#
+# Not narrowed for bob: MLflow's own model registry is separate from the
+# SageMaker one, and the boundary that matters -- who approves a
+# deployable version -- is enforced on the SageMaker side by DenyApproval
+# above.
+resource "aws_iam_role_policy_attachment" "bob_mlflow_access" {
+  role       = aws_iam_role.bob.name
+  policy_arn = aws_iam_policy.mlflow_access.arn
 }
 
 # ##############################

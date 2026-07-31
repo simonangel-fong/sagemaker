@@ -252,3 +252,13 @@ aws sagemaker list-model-packages --model-package-group-name GROUP \
 # ScriptProcessor uploads `code=` relative to cwd. run the notebook from
 # the repo root, or preprocess.py is not found at definition time.
 ```
+
+---
+
+## Onboard Bob
+
+```sh
+terraform -chdir=infra/domain output -raw bob_login_command
+
+
+```
