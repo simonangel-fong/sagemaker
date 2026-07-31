@@ -91,6 +91,38 @@ data "aws_iam_policy_document" "pipeline_access" {
     resources = ["*"]
   }
 
+  # Reading job logs back. Phase 3 granted the write side -- the training
+  # container creating its own log stream and putting events. Opening the
+  # Logs tab on a finished job is the read side, and needs both.
+  #
+  # DescribeLogGroups takes no resource scope: it enumerates, so there is
+  # nothing to name. The Get/FilterLogEvents calls that follow it are
+  # scoped to the sagemaker log groups.
+  statement {
+    sid       = "CloudWatchLogsDiscovery"
+    effect    = "Allow"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "CloudWatchLogsRead"
+    effect = "Allow"
+
+    actions = [
+      "logs:DescribeLogStreams",
+      "logs:GetLogEvents",
+      "logs:FilterLogEvents",
+      "logs:StartQuery",
+      "logs:GetQueryResults",
+    ]
+
+    resources = [
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/sagemaker/*",
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/sagemaker/*:log-stream:*",
+    ]
+  }
+
   # The register step creates a Model and a versioned package under the
   # group above.
   statement {
