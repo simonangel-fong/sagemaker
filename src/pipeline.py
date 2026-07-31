@@ -20,6 +20,7 @@ import argparse
 
 from sagemaker.core.processing import ScriptProcessor
 from sagemaker.core.shapes import (
+    OutputDataConfig,
     ProcessingInput,
     ProcessingOutput,
     ProcessingS3Input,
@@ -77,7 +78,14 @@ def build(bucket, role, model_package_group, image, instance_type, rmse_threshol
     """Return the Pipeline object. Nothing is created until upsert()."""
     # PipelineSession is what makes .run()/.train() below return step
     # arguments instead of launching a job immediately.
-    session = PipelineSession()
+    #
+    # default_bucket matters as much as that. Left unset, the SDK reaches
+    # for sagemaker-<region>-<account> and tries to create it -- alice's
+    # policy is scoped to the data bucket, so that 403s on HeadBucket
+    # before any job is even defined. ScriptProcessor also uploads the
+    # `code=` script to whatever this points at, and there is no
+    # per-processor override for it.
+    session = PipelineSession(default_bucket=bucket)
 
     # Exposed as parameters so a run can be retried with a different
     # threshold or instance from the Studio UI without editing code.
@@ -151,6 +159,13 @@ def build(bucket, role, model_package_group, image, instance_type, rmse_threshol
         source_code=SourceCode(source_dir="src", entry_script="train.py"),
         compute=Compute(instance_type=instance_type, instance_count=1),
         hyperparameters={"n-estimators": 100, "min-samples-leaf": 5},
+        # Without this the SDK falls back to its own default bucket
+        # (sagemaker-<region>-<account>), which alice's policy does not
+        # cover -- HeadBucket 403 before a single job is defined. Every
+        # artifact belongs in the data bucket anyway.
+        output_data_config=OutputDataConfig(
+            s3_output_path=f"s3://{bucket}/model/pipeline/",
+        ),
         sagemaker_session=session,
     )
 
