@@ -16,6 +16,7 @@ data "aws_iam_policy_document" "kms" {
     }
   }
 
+  # allow sagemaker
   statement {
     sid    = "AllowSageMakerExecutionRole"
     effect = "Allow"
@@ -33,6 +34,22 @@ data "aws_iam_policy_document" "kms" {
     principals {
       type        = "AWS"
       identifiers = [aws_iam_role.sagemaker_execution.arn]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = local.endpoint_enabled ? [1] : []
+
+    content {
+      sid       = "AllowApiLambdaRole"
+      effect    = "Allow"
+      actions   = ["kms:Decrypt", "kms:DescribeKey"]
+      resources = ["*"]
+
+      principals {
+        type        = "AWS"
+        identifiers = [aws_iam_role.api_lambda[0].arn]
+      }
     }
   }
 }

@@ -1,6 +1,5 @@
 # s3.tf
 
-# force_destroy: learning demo, data and models are reproducible.
 resource "aws_s3_bucket" "data" {
   bucket        = local.bucket_name
   force_destroy = true
@@ -38,8 +37,6 @@ resource "aws_s3_bucket_versioning" "data" {
 # ##############################
 # Layout
 # ##############################
-# S3 has no real directories; these zero-byte keys just make the MLOps prefix
-# convention visible in the console.
 resource "aws_s3_object" "prefixes" {
   for_each = toset(["raw/", "clean/", "features/", "models/"])
 
@@ -81,8 +78,7 @@ resource "aws_s3_bucket_policy" "data" {
 # ##############################
 # Lifecycle
 # ##############################
-# Versioning is on, so without these rules every re-run silently retains the
-# previous object at full price.
+# Versioning 
 resource "aws_s3_bucket_lifecycle_configuration" "data" {
   bucket = aws_s3_bucket.data.id
 

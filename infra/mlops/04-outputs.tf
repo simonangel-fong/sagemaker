@@ -21,7 +21,8 @@ output "endpoint_name" {
   value       = one(aws_sagemaker_endpoint.this[*].name)
 }
 
-output "endpoint_url" {
-  description = "Serverless inference endpoint, null when disabled."
-  value       = one(aws_sagemaker_endpoint.this[*].name)
+# Public, unauthenticated. Anyone with this URL can spend inference.
+output "api_url" {
+  description = "Public HTTPS predict URL, null when the endpoint is disabled."
+  value       = local.endpoint_enabled ? "${aws_apigatewayv2_stage.default[0].invoke_url}/predict" : null
 }
