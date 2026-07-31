@@ -10,6 +10,9 @@ locals {
   prefix_name = "${var.project}-${var.env}"
   bucket_name = "${local.prefix_name}-data-${random_string.suffix.result}"
 
+  # raw/ is the upload target, the other two are written by later phases.
+  s3_prefixes = ["raw/", "featured/", "model/"]
+
   default_tags = merge(
     {
       Project   = var.project

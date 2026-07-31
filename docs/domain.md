@@ -24,22 +24,25 @@ code path: infra/domain/
 
 2 upload data
 
-- create s3 bucket
-  - key: raw/, featured/, model/
-- upload data
+- tf: s3 bucket + kms, prefixes raw/, featured/, model/
+- cli: aws s3 cp data/ -> raw/ (see Development)
+- verify: aws s3 ls shows day.csv, hour.csv
+
+note: tf provisions infra only. data moves via cli.
 
 ---
 
 3 create domain
 onboard alice (admin)
 
-- alice role: trust sagemaker only, no inline policy yet
-- domain: auth IAM, vpc + subnets, retention policy delete
+- alice role: trust sagemaker + studio-access policy (no data access)
+- domain: auth IAM, vpc + subnets, kms, retention policy delete
 - user profile: alice
 - verify: alice opens studio, lands in own home dir
 - reference: infra/archived/06-sagemaker-domain.tf
 
-note: role stays empty here. each later phase adds one policy.
+note: studio-access is the floor -- createapp/space, ecr pull, kms.
+a truly empty role cannot open studio at all. data access is phase 4.
 
 ---
 
@@ -133,4 +136,20 @@ terraform -chdir=infra/domain init -backend-config=backend.hcl -reconfigure
 terraform -chdir=infra/domain fmt && terraform -chdir=infra/domain validate
 
 terraform -chdir=infra/domain apply -auto-approve
+```
+
+upload data (phase 2, after apply)
+
+```sh
+BUCKET=$(terraform -chdir=infra/domain output -raw data_bucket)
+aws s3 cp data/ "s3://$BUCKET/raw/" --recursive --exclude "*" --include "*.csv"
+# upload: data\day.csv to s3://sagemaker-domain-dev-data-pqkx2l/raw/day.csv
+# upload: data\hour.csv to s3://sagemaker-domain-dev-data-pqkx2l/raw/hour.csv
+
+aws s3 ls "s3://sagemaker-domain-dev-data-pqkx2l/raw/"
+# 2026-07-31 06:31:51          0
+# 2026-07-31 06:33:23      57569 day.csv
+# 2026-07-31 06:33:23    1156736 hour.csv
+
+
 ```
