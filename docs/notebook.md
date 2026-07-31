@@ -60,7 +60,11 @@ resource "aws_sagemaker_notebook_instance" "this" {
 ## Use
 
 ```sh
+terraform -chdir=infra/mlops init -backend-config=backend.hcl
+terraform -chdir=infra/mlops fmt && terraform -chdir=infra/mlops validate
+
 terraform -chdir=infra/mlops apply -auto-approve
+terraform -chdir=infra/mlops destroy -auto-approve
 
 # presigned login URL, valid ~12h
 terraform -chdir=infra/mlops output -raw notebook_login_command

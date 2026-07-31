@@ -82,7 +82,7 @@ python src/invoke_endpoint.py \
   --bucket   (terraform -chdir=infra/mlops output -raw data_bucket)
 
 # test
-pytest tests/ -q
+pytest lambda/tests/ -q
 # ......................                                                                                                                      [100%]
 # 22 passed in 0.04s
 ```

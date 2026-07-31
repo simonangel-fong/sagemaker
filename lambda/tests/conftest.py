@@ -10,7 +10,7 @@ import types
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "lambda" / "predict"))
+sys.path.insert(0, str(REPO_ROOT / "predict"))
 
 if "boto3" not in sys.modules:
     stub = types.ModuleType("boto3")
