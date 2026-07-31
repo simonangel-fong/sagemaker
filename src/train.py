@@ -42,11 +42,20 @@ def parse_args():
 
 
 def load(channel_dir):
-    files = sorted(Path(channel_dir).glob("*.csv"))
-    if not files:
-        raise FileNotFoundError(f"no .csv found in {channel_dir}")
+    """Read the training channel, whichever format it arrived in.
 
-    return pd.read_csv(files[0])
+    submit_job.py points this at raw/ and gets CSV. The phase 7 pipeline
+    feeds it the preprocess step's parquet output. Both callers stay
+    working rather than one format being hardcoded.
+    """
+    root = Path(channel_dir)
+
+    for pattern, reader in (("*.parquet", pd.read_parquet), ("*.csv", pd.read_csv)):
+        files = sorted(root.glob(pattern))
+        if files:
+            return reader(files[0])
+
+    raise FileNotFoundError(f"no .parquet or .csv found in {channel_dir}")
 
 
 def main():

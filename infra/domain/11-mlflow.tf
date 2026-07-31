@@ -107,6 +107,10 @@ resource "aws_sagemaker_mlflow_app" "this" {
 
   default_domain_id_list = [aws_sagemaker_domain.this.id]
 
-  # Phase 7 switches this to AutoModelRegistrationEnabled.
+  # Left disabled. Phase 7 registers from the pipeline's own step, behind
+  # an rmse gate, so every version in the registry came from a run that
+  # passed. Auto-registration would also promote every mlflow.log_model
+  # call from a notebook, which is the ungated path this phase exists to
+  # replace.
   model_registration_mode = "AutoModelRegistrationDisabled"
 }

@@ -103,11 +103,26 @@ interleaves two unrelated id spaces.
 
 7 pipeline
 
-- steps: preprocess -> train -> eval -> register
-- grant: passrole + pipeline exec -- policy 3
-- register to model registry, manual approval gate
-- reference src/train.py, src/submit_job.py
-- verify: pipeline run green end to end
+- steps: preprocess -> train -> eval -> [rmse gate] -> register
+- tf: policy 3 -- pipeline + processing jobs + registry (13-iam-pipeline.tf)
+- tf: model package group -- the registry itself, not the dag
+- src/preprocess.py, src/evaluate.py new; src/train.py reused unchanged
+- src/pipeline.py defines the dag, notebooks/studio_pipeline.ipynb runs it
+- register lands PendingManualApproval -- phase 8 deploys only Approved
+- explore: step cache on rerun, gate skip at a threshold the model misses
+- verify: run green, rmse 126.3 matches phase 5, one pending version
+
+note: the dag is python, not terraform. aws_sagemaker_pipeline exists but
+takes the whole definition as one json blob -- the blob the sdk generates,
+and any upsert() from the notebook makes terraform's copy stale. tf owns
+the policy and the package group; the definition ships with the code it
+trains. same line phase 2 drew for data.
+
+policy 3 adds processing jobs: phase 4 granted training jobs only, so
+preprocess and eval 403 without it.
+
+mlflow's AutoModelRegistrationEnabled stays off. it would promote every
+log_model call, which is the ungated path this phase replaces.
 
 ---
 
@@ -179,6 +194,21 @@ aws s3 ls "s3://sagemaker-domain-dev-data-pqkx2l/raw/"
 
 ```
 
+pipeline (phase 7) -- values for the notebook
+
+```sh
+terraform -chdir=infra/domain output -raw data_bucket
+terraform -chdir=infra/domain output -raw alice_role_arn
+terraform -chdir=infra/domain output -raw model_package_group
+
+# or drive it from a shell instead of the notebook
+python src/pipeline.py \
+  --bucket "$(terraform -chdir=infra/domain output -raw data_bucket)" \
+  --role "$(terraform -chdir=infra/domain output -raw alice_role_arn)" \
+  --model-package-group "$(terraform -chdir=infra/domain output -raw model_package_group)" \
+  --start
+```
+
 ---
 
 ## Debug
@@ -195,4 +225,22 @@ terraform -chdir=infra/domain output -raw mlflow_ui_command
 # runs live in the app's metadata store, not in s3 -- s3 holds only the
 # artifacts. an empty ui with objects under mlflow-app/ means the client
 # is pointed at a different mlflow resource than the ui.
+```
+
+phase 7
+
+```sh
+# which step failed, and why
+aws sagemaker list-pipeline-execution-steps --pipeline-execution-arn ARN \
+  --query 'PipelineExecutionSteps[].[StepName,StepStatus,FailureReason]' --output table
+
+# a run that ends green with nothing registered is the gate working,
+# not a failure -- check the condition step's outcome before debugging.
+
+# registry state
+aws sagemaker list-model-packages --model-package-group-name GROUP \
+  --query 'ModelPackageSummaryList[].[ModelPackageVersion,ModelApprovalStatus]' --output table
+
+# ScriptProcessor uploads `code=` relative to cwd. run the notebook from
+# the repo root, or preprocess.py is not found at definition time.
 ```

@@ -41,4 +41,9 @@ output "mlflow_ui_command" {
   value       = "aws sagemaker create-presigned-mlflow-app-url --mlflow-app-arn ${aws_sagemaker_mlflow_app.this.arn} --region ${var.aws_region} --query AuthorizedUrl --output text"
 }
 
+output "model_package_group" {
+  description = "Model registry group the pipeline registers versions into."
+  value       = aws_sagemaker_model_package_group.bike.model_package_group_name
+}
+
 # Phase 9 adds bob.
