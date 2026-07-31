@@ -55,6 +55,25 @@ data "aws_iam_policy_document" "pipeline_access" {
     resources = ["*"]
   }
 
+  # The Studio Pipelines UI does not call ListPipelines -- it queries the
+  # Search API, which is how the console enumerates every resource type.
+  # Without this the panel renders an error instead of the dag, even
+  # though the pipeline exists and runs fine from the sdk.
+  #
+  # Search takes no resource scope: it is account-wide by design, and the
+  # results are filtered by what the caller can otherwise see.
+  statement {
+    sid    = "StudioResourceSearch"
+    effect = "Allow"
+
+    actions = [
+      "sagemaker:Search",
+      "sagemaker:GetSearchSuggestions",
+    ]
+
+    resources = ["*"]
+  }
+
   # Phase 4 granted training jobs only. The preprocess and evaluate steps
   # run as processing jobs, which are a separate action family -- without
   # this the pipeline fails on its first step.
