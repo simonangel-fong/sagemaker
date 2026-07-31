@@ -199,12 +199,39 @@ aws iam simulate-principal-policy --policy-source-arn "$ROLE" \
 
 10 collaboration
 
-- shared space: alice creates, bob joins, both edit
-- explore: real-time coedit, shared ebs vs private home dir
-- bob reads alice's mlflow runs, submits his own
-- bob trains a variant, registers a new model version
-- alice approves it in the registry -- the handoff
-- verify: bob cannot approve or deploy on his own
+not implemented. steps:
+
+1. tf: shared space (16-shared-space.tf)
+   sharing_type = "Shared", and omit ownership_settings -- that omission
+   is what makes it shared. both profiles then see it in the launcher
+   and share one ebs volume instead of separate home dirs.
+
+2. bob reads alice's mlflow runs
+   nothing to build. set_tracking_uri + search_runs as bob. first real
+   test of his sagemaker-mlflow grant -- the simulator cannot check it.
+
+3. bob trains a variant
+   reuse src/pipeline.py with min_samples_leaf=1 -- phase 5's run B.
+   125.2 rmse, 0.9% better, 6x the artifact: a real tradeoff to argue
+   about, not a toy change.
+
+4. register, then hand off
+   his run writes v2 PendingManualApproval. he cannot move it.
+   alice approves in studio: Models > group > v2 > Update status.
+
+5. verify the boundary
+   bob calls update_model_package and catches AccessDenied. a test that
+   expects the failure is what makes the isolation real.
+
+gotchas:
+
+- src/pipeline.py hardcodes featured/pipeline/ and model/pipeline/.
+  bob's run hits the s3 write deny and fails mid-run, after paying for
+  preprocess and train. parameterise the output prefix to users/bob/
+  first.
+
+- one shared ebs volume means one clone of the repo. two people running
+  notebooks in the same checkout collide on outputs and git state.
 
 ---
 
