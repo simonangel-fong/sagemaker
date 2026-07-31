@@ -237,45 +237,24 @@ gotchas:
 
 11 teardown
 
-order matters. the domain will not delete while anything inside it
-exists, and terraform does not know about resources the sdk created.
-
-1. stop the running apps -- this is the part that bills
-   an InService JupyterLab app is an ec2 instance charging by the hour.
-   nothing else in this stack does. do this first even if the rest waits.
-
-2. delete what the sdk created, before terraform runs
-   terraform owns 55 resources; these four are not among them:
-   - pipeline bike-sharing-rf        (src/pipeline.py upsert)
-   - model package version 1         (the register step)
-   - model sagemaker-...-1785529436727 (created on the way to the package)
-   - the featured/, model/ objects   (job output, not tf)
-
-   the model package group IS terraform's, and it will not delete while
-   it still holds a version. that is the one ordering trap here --
-   destroy fails partway with ValidationException and leaves the domain
-   half-gone.
-
-3. terraform destroy
-   handles apps, spaces, profiles, domain, mlflow app, s3, kms, iam.
-   force_destroy on the bucket empties it; retention_policy Delete on
-   the domain drops the efs volume.
-
-4. confirm
-   efs gone, bucket gone, no orphaned iam roles.
+step 1 -- delete the running apps        studio, or cli
 
 ```sh
 D=$(terraform -chdir=infra/domain output -raw domain_id)
 
-# 1. what is running and billing
 aws sagemaker list-apps --domain-id-equals "$D" \
-  --query 'Apps[?Status==`InService`].[AppType,SpaceName,UserProfileName]' --output table
+  --query 'Apps[].[AppType,AppName,SpaceName,UserProfileName,Status]' --output table
 
 aws sagemaker delete-app --domain-id "$D" --space-name alice-jupyterlab \
   --app-type JupyterLab --app-name default
-# repeat per running app. a Failed app still needs deleting.
+```
 
-# 2. sdk-created resources, in this order
+studio: File > Shut Down, or the running-terminals panel.
+repeat per app. a Failed app still needs deleting.
+
+step 2 -- delete the sdk-created resources        cli
+
+```sh
 aws sagemaker delete-pipeline --pipeline-name bike-sharing-rf
 
 GROUP=$(terraform -chdir=infra/domain output -raw model_package_group)
@@ -286,22 +265,70 @@ done
 
 aws sagemaker list-models --query 'Models[].ModelName' --output text | \
   xargs -r -n1 aws sagemaker delete-model --model-name
-
-# 3.
-terraform -chdir=infra/domain destroy -auto-approve
-
-# 4.
-aws efs describe-file-systems --query 'FileSystems[?Tags[?Value==`'"$D"'`]]' --output text
-aws iam list-roles --query 'Roles[?starts_with(RoleName,`sagemaker-domain-dev`)].RoleName' --output text
 ```
 
-note: an approved model package cannot be deleted while an endpoint
-serves it. phase 8 was skipped, so that does not apply here -- if it had
-run, the endpoint goes before the version.
+step 3 -- destroy the stack        cli
 
-cost after teardown: nothing. before it, the only hourly charge is a
-running app. the mlflow app is serverless, pipelines bill per run, s3 and
-kms are pennies. stopping the app is 95% of the saving.
+```sh
+terraform -chdir=infra/domain destroy -auto-approve
+```
+
+step 4 -- confirm nothing is left        cli
+
+```sh
+aws efs describe-file-systems \
+  --query 'FileSystems[?Tags[?Value==`'"$D"'`]].FileSystemId' --output text
+aws iam list-roles \
+  --query 'Roles[?starts_with(RoleName,`sagemaker-domain-dev`)].RoleName' --output text
+# both empty
+```
+
+---
+
+why the order
+
+a running app blocks its space, a space blocks the profile, a profile
+blocks the domain. terraform orders the last three itself -- spaces,
+profiles and the domain are all in state with dependency edges.
+
+apps are not. starting the jupyterlab app was a manual studio action
+(phase 4), so no tf resource exists for it and destroy will hang on the
+space delete. step 1 is required, not just thrifty.
+
+step 2 is required for the same reason. terraform owns 55 resources;
+these are not among them, because the sdk created them:
+
+| resource | created by |
+|---|---|
+| pipeline bike-sharing-rf | pipeline.py upsert |
+| model package version 1 | the register step |
+| model sagemaker-...-1785529436727 | created on the way to the package |
+| featured/, model/ objects | job output |
+
+the model package group IS terraform's, and refuses to delete while it
+holds a version:
+
+```
+ValidationException: Model Package Group ... cannot be deleted
+because it still contains Model Packages.
+```
+
+so destroy fails partway and leaves the domain half-gone. delete the
+versions first.
+
+s3 objects are the exception -- force_destroy on the bucket empties it,
+and retention_policy Delete on the domain drops the efs volume.
+
+if phase 8 had run: an endpoint serving an approved version pins it.
+endpoint goes before the version.
+
+cost
+
+a running app is an ec2 instance billing hourly, and the only hourly
+charge in the stack -- the mlflow app is serverless, pipelines bill per
+run, s3 and kms are pennies. so step 1 alone is most of the saving, and
+it does not commit you to the rest: the ebs volume persists and the app
+restarts where it left off.
 
 ## Development
 
