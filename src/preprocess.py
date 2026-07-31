@@ -22,18 +22,28 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--input-dir", default="/opt/ml/processing/input")
     p.add_argument("--output-dir", default="/opt/ml/processing/output")
+    # raw/ holds day.csv as well. Globbing *.csv and taking the first
+    # match silently picked the daily file -- 731 rows, no hr column, a
+    # target an order of magnitude larger -- and the run went green with
+    # an rmse of 2250.
+    p.add_argument("--input-file", default="hour.csv")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
 
-    files = sorted(Path(args.input_dir).glob("*.csv"))
-    if not files:
-        raise FileNotFoundError(f"no .csv found in {args.input_dir}")
+    source = Path(args.input_dir) / args.input_file
+    if not source.exists():
+        available = sorted(p.name for p in Path(args.input_dir).glob("*.csv"))
+        raise FileNotFoundError(f"{args.input_file} not in {args.input_dir}; found {available}")
 
-    df = pd.read_csv(files[0])
-    print(f"loaded {len(df)} rows from {files[0]}", flush=True)
+    df = pd.read_csv(source)
+    print(f"loaded {len(df)} rows from {source}", flush=True)
+
+    # The hourly file is the one this pipeline is built around. Guard the
+    # shape rather than trusting the filename alone.
+    assert "hr" in df.columns, f"{args.input_file} has no hr column -- is this the daily file?"
 
     # The leak is the whole reason DROP exists -- assert it rather than
     # trusting the column list to stay correct.

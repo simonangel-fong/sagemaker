@@ -28,7 +28,13 @@ def parse_args():
 
 
 def load_model(model_dir):
-    """The training step hands over model.tar.gz, not a loose artifact."""
+    """The training step hands over model.tar.gz, not a loose artifact.
+
+    Returns the model and the feature order it was fit on. train.py saves
+    that list alongside the model because column order is part of the
+    contract -- a RandomForest takes positional input, so reordering the
+    columns silently scores garbage rather than raising.
+    """
     root = Path(model_dir)
 
     tars = sorted(root.glob("*.tar.gz"))
@@ -40,7 +46,11 @@ def load_model(model_dir):
     if not path.exists():
         raise FileNotFoundError(f"model.joblib not found in {model_dir}")
 
-    return joblib.load(path)
+    features_path = root / "features.joblib"
+    if not features_path.exists():
+        raise FileNotFoundError(f"features.joblib not found in {model_dir}")
+
+    return joblib.load(path), joblib.load(features_path)
 
 
 def load_frame(test_dir):
@@ -54,13 +64,19 @@ def load_frame(test_dir):
 def main():
     args = parse_args()
 
-    model = load_model(args.model_dir)
+    model, features = load_model(args.model_dir)
     df = load_frame(args.test_dir)
+
+    # Rebuild the frame in the order the model was fit on rather than the
+    # order the parquet happens to be in. Deriving it from df.columns
+    # here scored 2250 against a 227 baseline -- wrong values in every
+    # column, no error raised.
+    missing = [c for c in features if c not in df.columns]
+    assert not missing, f"test frame is missing {missing}"
 
     # Same time split as phases 4-6: fit on 2011, score on 2012. The
     # model never saw yr == 1.
     test = df[df.yr == 1]
-    features = [c for c in df.columns if c != TARGET]
 
     y_true = test[TARGET]
     y_pred = model.predict(test[features])

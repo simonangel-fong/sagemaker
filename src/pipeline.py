@@ -131,8 +131,12 @@ def build(bucket, role, model_package_group, image, instance_type, rmse_threshol
             outputs=[
                 ProcessingOutput(
                     output_name="featured",
+                    # featured/pipeline/, not featured/. Writing the bare
+                    # prefix overwrote the hour.parquet phase 4 produced,
+                    # which phases 5 and 6 both read -- one pipeline run
+                    # silently rewrote their input.
                     s3_output=ProcessingS3Output(
-                        s3_uri=f"s3://{bucket}/featured/",
+                        s3_uri=f"s3://{bucket}/featured/pipeline/",
                         local_path="/opt/ml/processing/output",
                         s3_upload_mode="EndOfJob",
                     ),
