@@ -1,10 +1,4 @@
 # space.tf
-#
-# Phase 4: alice's private JupyterLab space.
-#
-# Terraform declares the space, registers the repo in the clone menu, and
-# attaches a lifecycle config that clones it on app start. Starting the
-# app stays manual -- that is the part that bills.
 
 # ##############################
 # Lifecycle config

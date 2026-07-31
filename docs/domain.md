@@ -77,22 +77,27 @@ volume persists.
 - verify: refit gives identical metrics, assert in the notebook
 
 expected: baseline rmse 227.8 / A 126.3 r2 .634 12MB
-          B 125.2 r2 .641 70.7MB -- 0.9% better, 6x the artifact
+B 125.2 r2 .641 70.7MB -- 0.9% better, 6x the artifact
 
 ---
 
 6 mlflow tracking
 
-- tf: tracking server + its own role, artifact store -> mlflow/ (11-mlflow.tf)
-- tf: policy 2 -- sagemaker: control plane + sagemaker-mlflow:* (12-iam-mlflow.tf)
+- tf: mlflow app + its own role, artifact store -> mlflow-app/ (11-mlflow.tf)
+- tf: policy 2 -- sagemaker:\*MlflowApp\* + sagemaker-mlflow:\* (12-iam-mlflow.tf)
 - notebooks/studio_mlflow.ipynb: set TRACKING_ARN, run all
 - log A and B with params / metrics / model, register A
 - explore: run comparison ui, parallel coordinates, registry handoff
 - verify: search_runs matches eval.json rmse exactly (assert in nb)
 
-note: the server bills hourly while it exists, idle or not -- the most
-expensive resource in this stack. stop it between sessions, runs and
-artifacts survive in s3.
+note: app, not tracking server. serverless -- no hourly charge, nothing
+to stop between sessions, ~2 min to create instead of ~25. it is also
+the studio-facing resource: default_domain_id_list puts it in the
+sidebar, which a tracking server never appeared in.
+
+the retired tracking server owned the mlflow/ prefix. the app uses
+mlflow-app/ -- both number experiments from 1, so sharing one prefix
+interleaves two unrelated id spaces.
 
 ---
 
@@ -156,7 +161,6 @@ terraform -chdir=infra/domain apply -auto-approve
 
 terraform -chdir=infra/domain destroy -auto-approve
 
-
 ```
 
 upload data (phase 2, after apply)
@@ -180,11 +184,15 @@ aws s3 ls "s3://sagemaker-domain-dev-data-pqkx2l/raw/"
 ## Debug
 
 ```sh
-#  MLflow tracking servers take ~25 minutes
+# the mlflow app creates in ~2 min. the tracking server it replaced
+# took ~25, which is what this check was for.
 
-aws sagemaker describe-mlflow-tracking-server \
-  --tracking-server-name sagemaker-domain-dev-mlflow \
-  --region ca-central-1 --query 'TrackingServerStatus'
+terraform -chdir=infra/domain output -raw mlflow_app_arn
 
-# "Creating"
+# open the ui
+terraform -chdir=infra/domain output -raw mlflow_ui_command
+
+# runs live in the app's metadata store, not in s3 -- s3 holds only the
+# artifacts. an empty ui with objects under mlflow-app/ means the client
+# is pointed at a different mlflow resource than the ui.
 ```

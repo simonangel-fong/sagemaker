@@ -79,19 +79,8 @@ variable "space_volume_size" {
   }
 }
 
-# ##############################
-# MLflow
-# ##############################
-variable "mlflow_server_size" {
-  description = "Tracking server size. Small is the cheapest and fits a study stack."
-  type        = string
-  default     = "Small"
-
-  validation {
-    condition     = contains(["Small", "Medium", "Large"], var.mlflow_server_size)
-    error_message = "mlflow_server_size must be one of: Small, Medium, Large."
-  }
-}
+# MLflow has no size variable: the app scales itself. The retired
+# tracking server took a Small/Medium/Large.
 
 # ##############################
 # Git

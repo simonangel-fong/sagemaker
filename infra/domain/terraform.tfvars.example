@@ -8,6 +8,4 @@ public_subnet_ids = ["subnet-xxxxxxxx"]
 space_instance_type = "ml.t3.medium"
 space_volume_size   = 5
 
-mlflow_server_size = "Small"
-
 git_repository_url = "https://github.com/owner/repo.git"

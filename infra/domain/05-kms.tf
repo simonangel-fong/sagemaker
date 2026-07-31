@@ -3,7 +3,7 @@
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "kms" {
-  # Without this the key becomes unmanageable.
+  # allow root
   statement {
     sid       = "AllowAccountAdmin"
     effect    = "Allow"
@@ -16,6 +16,7 @@ data "aws_iam_policy_document" "kms" {
     }
   }
 
+  # allow alice
   statement {
     sid    = "AllowAliceExecutionRole"
     effect = "Allow"
@@ -36,8 +37,7 @@ data "aws_iam_policy_document" "kms" {
     }
   }
 
-  # The domain EFS volume is encrypted with this key and mounted by the
-  # SageMaker service principal, not by alice's role.
+  # allow sagemaker
   statement {
     sid    = "AllowSageMakerService"
     effect = "Allow"
@@ -58,6 +58,9 @@ data "aws_iam_policy_document" "kms" {
   }
 }
 
+# ##############################
+# KMS
+# ##############################
 resource "aws_kms_key" "this" {
   description             = "${local.prefix_name} sagemaker encryption"
   enable_key_rotation     = true

@@ -31,14 +31,14 @@ output "alice_space_name" {
   value       = aws_sagemaker_space.alice.space_name
 }
 
-output "mlflow_tracking_server_arn" {
+output "mlflow_app_arn" {
   description = "Tracking URI for mlflow.set_tracking_uri()."
-  value       = aws_sagemaker_mlflow_tracking_server.this.arn
+  value       = aws_sagemaker_mlflow_app.this.arn
 }
 
 output "mlflow_ui_command" {
   description = "CLI command that returns a presigned MLflow UI URL."
-  value       = "aws sagemaker create-presigned-mlflow-tracking-server-url --tracking-server-name ${aws_sagemaker_mlflow_tracking_server.this.tracking_server_name} --region ${var.aws_region} --query AuthorizedUrl --output text"
+  value       = "aws sagemaker create-presigned-mlflow-app-url --mlflow-app-arn ${aws_sagemaker_mlflow_app.this.arn} --region ${var.aws_region} --query AuthorizedUrl --output text"
 }
 
 # Phase 9 adds bob.
