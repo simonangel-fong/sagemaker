@@ -51,4 +51,20 @@ output "endpoint_role_arn" {
   value       = aws_iam_role.endpoint.arn
 }
 
-# Phase 9 adds bob.
+# ##############################
+# Phase 9 -- bob
+# ##############################
+output "bob_role_arn" {
+  description = "Execution role for the bob profile. Scoped to his own prefix."
+  value       = aws_iam_role.bob.arn
+}
+
+output "bob_login_command" {
+  description = "CLI command that returns a presigned Studio URL for bob."
+  value       = "aws sagemaker create-presigned-domain-url --domain-id ${aws_sagemaker_domain.this.id} --user-profile-name ${aws_sagemaker_user_profile.bob.user_profile_name} --region ${var.aws_region} --query AuthorizedUrl --output text"
+}
+
+output "bob_prefix" {
+  description = "The only prefix bob can write to."
+  value       = "s3://${aws_s3_bucket.data.id}/${local.bob_prefix}"
+}
