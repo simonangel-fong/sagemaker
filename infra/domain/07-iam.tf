@@ -39,8 +39,10 @@ resource "aws_iam_role" "alice" {
 # one -- which is the point of phase 9. Bob keeps enumerated, scoped
 # policies, and the contrast between the two roles is the lesson.
 #
-# The data bucket does NOT match the managed policy's s3 wildcard, so
-# the scoped grant in 09-iam-data.tf is still doing real work.
+# The data bucket DOES match the managed policy's arn:aws:s3:::*sagemaker*
+# pattern, so those grants overlap. 09-iam-data.tf stays anyway: a name
+# substring is the wrong thing to hang the only data grant on, and it is
+# what bob's scoped copy narrows in phase 9.
 resource "aws_iam_role_policy_attachment" "alice_sagemaker_full" {
   role       = aws_iam_role.alice.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"

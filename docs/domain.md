@@ -241,6 +241,14 @@ aws sagemaker list-pipeline-execution-steps --pipeline-execution-arn ARN \
 aws sagemaker list-model-packages --model-package-group-name GROUP \
   --query 'ModelPackageSummaryList[].[ModelPackageVersion,ModelApprovalStatus]' --output table
 
+# the model registry has no page in the aws console left nav -- not under
+# Model governance (that is Model dashboard / Model cards) and not under
+# Marketplace model packages (third-party listings). registered versions
+# are visible only in studio, or by the cli above.
+#
+# endpoints are the opposite: Deployments & inference > Endpoints shows
+# them in the console once phase 8 creates one.
+
 # ScriptProcessor uploads `code=` relative to cwd. run the notebook from
 # the repo root, or preprocess.py is not found at definition time.
 ```
