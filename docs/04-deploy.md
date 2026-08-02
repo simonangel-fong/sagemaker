@@ -7,7 +7,8 @@
   - [Files](#files)
   - [Key contract](#key-contract)
   - [Use](#use)
-  - [Public API](#public-api)
+  - [Test: Public API](#test-public-api)
+  - [Runbook](#runbook)
 
 ---
 
@@ -75,11 +76,7 @@ model_artifact_uri = "s3://<bucket>/models/<job>/output/model.tar.gz"
 ```
 
 ```sh
-terraform -chdir=infra/mlops apply -auto-approve   # ~18 min to InService
-
-python src/invoke_endpoint.py \
-  --endpoint (terraform -chdir=infra/mlops output -raw endpoint_name) \
-  --bucket   (terraform -chdir=infra/mlops output -raw data_bucket)
+terraform -chdir=infra apply -auto-approve   # ~18 min to InService
 
 # test
 pytest lambda/tests/ -q
@@ -89,17 +86,47 @@ pytest lambda/tests/ -q
 
 ---
 
-## Public API
-
-`11-api.tf` puts an HTTP API and Lambda in front, giving a URL any client can
-call without AWS credentials:
+## Test: Public API
 
 ```sh
-terraform -chdir=infra/mlops output -raw api_url
-# https://0li80bm2hi.execute-api.ca-central-1.amazonaws.com//predict
+terraform -chdir=infra output -raw api_url
+# https://ngn74uwg7f.execute-api.ca-central-1.amazonaws.com/predict
 
-curl -X POST "https://0li80bm2hi.execute-api.ca-central-1.amazonaws.com//predict" -H 'content-type: application/json' -d '{"instances": [{"season": 1, "yr": 1, "mnth": 6, "hr": 8, "holiday": 0, "weekday": 3, "workingday": 1, "weathersit": 1, "temp": 0.24, "atemp": 0.2879, "hum": 0.81, "windspeed": 0.0}]}'
+curl -X POST "https://ngn74uwg7f.execute-api.ca-central-1.amazonaws.com/predict" -H 'content-type: application/json' -d '{"instances": [{"season": 1, "yr": 1, "mnth": 6, "hr": 8, "holiday": 0, "weekday": 3, "workingday": 1, "weathersit": 1, "temp": 0.24, "atemp": 0.2879, "hum": 0.81, "windspeed": 0.0}]}'
 # {"predictions": [207.2], "count": 1}
 ```
 
-![test api gtw](./img/test_api_gtw.png)
+---
+
+## Runbook
+
+```sh
+# confirm endpiont status
+aws sagemaker list-endpoints --region ca-central-1  --query 'Endpoints[].[EndpointName,EndpointStatus' --output text
+aws sagemaker list-endpoints  \
+  --region ca-central-1     \
+  --query 'Endpoints[].[EndpointName,EndpointStatus]'   \
+  --output text
+
+# mlops-sagemaker-dev-endpoint    InService
+
+# get log stream
+aws logs describe-log-streams   \
+  --log-group-name /aws/sagemaker/Endpoints/mlops-sagemaker-dev-endpoint    \
+  --region ca-central-1     \
+  --order-by LastEventTime    \
+  --descending --max-items 3    \
+  --query 'logStreams[].logStreamName'      \
+  --output text 2>&1
+
+# get log event in stream
+aws logs get-log-events \
+  --log-group-name "/aws/sagemaker/Endpoints/mlops-sagemaker-dev-endpoint"  \
+  --log-stream-name "AllTraffic/bada2215750460a8d77c73c9047f920d-cdeed22d3d664776b149162253db461d"  \
+  --region ca-central-1     \
+  --limit 60    \
+  --query "events[].message"    \
+  --output text
+
+
+```

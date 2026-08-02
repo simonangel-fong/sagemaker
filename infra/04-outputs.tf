@@ -20,18 +20,20 @@ output "notebook_login_command" {
 # ##############################
 # Sagemaker
 # ##############################
-output "execution_role_arn" {
+output "sagemaker_execution_role_arn" {
   description = "Role passed to training jobs and the endpoint."
   value       = aws_iam_role.sagemaker_assume.arn
 }
 
-# output "endpoint_name" {
-#   description = "Serverless inference endpoint, null when disabled."
-#   value       = one(aws_sagemaker_endpoint.this[*].name)
-# }
+output "endpoint_name" {
+  description = "Serverless inference endpoint, null when disabled."
+  value       = one(aws_sagemaker_endpoint.this[*].name)
+}
 
-# # Public, unauthenticated. Anyone with this URL can spend inference.
-# output "api_url" {
-#   description = "Public HTTPS predict URL, null when the endpoint is disabled."
-#   value       = local.endpoint_enabled ? "${aws_apigatewayv2_stage.default[0].invoke_url}/predict" : null
-# }
+# ##############################
+# API Gateway
+# ##############################
+output "api_url" {
+  description = "Public HTTPS predict URL, null when the endpoint is disabled."
+  value       = local.endpoint_enabled ? "${aws_apigatewayv2_stage.default[0].invoke_url}predict" : null
+}

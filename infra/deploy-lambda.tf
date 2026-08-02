@@ -1,25 +1,25 @@
 # lambda.tf
 
 # ##############################
-# IAM: Execution role
+# IAM Role: Lambda
 # ##############################
-data "aws_iam_policy_document" "api_lambda_assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
-
 resource "aws_iam_role" "api_lambda" {
   count = local.endpoint_enabled ? 1 : 0
 
-  name               = "${local.prefix_name}-api-role"
-  assume_role_policy = data.aws_iam_policy_document.api_lambda_assume_role.json
+  name = "${local.prefix_name}-lambda-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
 }
 
 data "aws_iam_policy_document" "api_lambda" {
@@ -97,7 +97,7 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      ENDPOINT_NAME = aws_sagemaker_endpoint.this[0].name
+      ENDPOINT_NAME = aws_sagemaker_endpoint.this[0].name # sagemaker endpoint
     }
   }
 
