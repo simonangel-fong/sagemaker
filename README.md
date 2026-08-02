@@ -3,69 +3,92 @@
 A side project that explores key features of sagemaker.
 
 - [Amazon SageMaker](#amazon-sagemaker)
-  - [Sagamaker](#sagamaker)
-  - [Feature: JupyterLab Notebooks](#feature-jupyterlab-notebooks)
+  - [Amazon SageMaker AI](#amazon-sagemaker-ai)
+  - [Feature: `JupyterLab Notebooks`](#feature-jupyterlab-notebooks)
   - [Feature: Training Job](#feature-training-job)
-  - [Feature: Deployment Endpoints](#feature-deployment-endpoints)
-  - [Integrate with `Lambda` and `API Gateway`](#integrate-with-lambda-and-api-gateway)
+  - [Feature: Endpoints](#feature-endpoints)
+  - [End-to-end Deployment](#end-to-end-deployment)
   - [Documentation](#documentation)
 
 ---
 
-## Sagamaker
+## Amazon SageMaker AI
 
-- `Amazon SageMaker`
-  - a fully managed cloud platform by AWS that helps developers and data scientists build, train, and deploy machine learning models.
-  - simplifies workflows by removing the need to manually set up or manage servers.
+- `Amazon SageMaker AI`
+  - a fully managed cloud service from AWS that lets `developers` and `data scientists` **build, train, and deploy** machine learning and foundation models.
+- **Benefits**:
+  - **removes the heavy work** of setting up servers, handling data, and scaling hardware by putting the whole machine learning process into one place.
 
 ---
 
-## Feature: JupyterLab Notebooks
+## Feature: `JupyterLab Notebooks`
 
 - `JupyterLab feature`
-  - A managed Jupyter notebook instance within SageMaker.
+  - A fully managed Amazon SageMaker AI **computing environments** running `JupyterLab` that let `data scientists` explore data and build machine learning models.
+- Benefi:
+  - **without managing server infrastructure**.
 
-- JupyterLab UI
-  ![notebook01](./docs/img/notebook01.png)
+---
 
-- Notebook UI
-  ![notebook02](./docs/img/notebook02.png)
+- JupyterLab Notebook UI
 
-- Training with the classic bike sharing dataset
-  ![notebook03](./docs/img/notebook03.png)
+![notebook01](./docs/img/notebook01.png)
 
-  ![notebook04](./docs/img/notebook04.png)
+![notebook02](./docs/img/notebook02.png)
+
+- Notebook in action: Training with the classic bike sharing dataset
+
+![notebook04](./docs/img/notebook04.png)
+
+![notebook03](./docs/img/notebook03.png)
 
 ---
 
 ## Feature: Training Job
 
-- Training Job
+- **Training Job**
+  - a fully managed service that provisions cloud hardware, **runs machine learning training code** inside a container, and automatically **saves the trained model** back to storage.
+
+- Benefits:
+  - automatically when a job **starts and shut down immediately** when it finishes.
+  - use built-in **algorithms** or bring your own custom Docker containers for **popular frameworks** like `PyTorch` and `TensorFlow`.
+
+---
+
+- **Training Jobs in action:**
 
 ![training_job01](./docs/img/training_job.png)
 
 ---
 
-## Feature: Deployment Endpoints
+## Feature: Endpoints
 
-- Deployment Endpoint
+- `Sagemaker Endpoints`
+  - fully managed `HTTPS URLs` used to **host machine learning models** and **deliver live predictions** to applications.
+
+- Endpoints
 
 ![deploy_endpoint01](./docs/img/deploy_endpoint01.png)
 
 ---
 
-## Integrate with `Lambda` and `API Gateway`
+## End-to-end Deployment
 
-- Diagram
+- Integrate with `Lambda` and `API Gateway` to serve machine learning model online.
 
-- Test API Gateway
+- **API Gateway Endpoint**
 
-![test api gtw](./docs/img/test_api_gtw.png)
+![deploy_api01](./docs/img/deploy_api01.png)
+
+- **Test**
+
+![deploy_api02](./docs/img/deploy_api02.png)
 
 ---
 
 ## Documentation
 
-- [Jupyter Notebook](./docs/notebook.md)
-- [Training Jobs](./docs/training_job.md)
-- [Deployment Endpoints](./docs/endpoint.md)
+- [IaC via Terraform](./docs/01-infra.md)
+- [Jupyter Notebook](./docs/02-notebook.md)
+- [Training Jobs](./docs/03-training_job.md)
+- [Endpoints & Deployment](./docs/04-deploy.md)

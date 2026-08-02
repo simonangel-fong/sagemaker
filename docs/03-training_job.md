@@ -4,7 +4,7 @@
 
 - [Amazon SageMaker Demo - Training Job](#amazon-sagemaker-demo---training-job)
   - [Architecture](#architecture)
-  - [Key contract](#key-contract)
+  - [Key config](#key-config)
   - [Use](#use)
 
 ---
@@ -24,14 +24,14 @@ Training on ephemeral compute. SageMaker provisions the instance, runs the scrip
    └──┬───────────────────────┬──┘
       │ SM_CHANNEL_TRAIN      │ SM_MODEL_DIR
       ▼                       ▼
-  s3://…/raw/bike/      s3://…/models/…/model.tar.gz
+  s3://…/raw/      s3://…/model/…/model.tar.gz
 ```
 
 ---
 
-## Key contract
+## Key config
 
-The script never touches S3. SageMaker mounts the channel and collects the
+SageMaker mounts the channel(S3 bucket) and collects the
 output directory:
 
 ```python
@@ -64,15 +64,15 @@ aws sagemaker list-training-jobs \
     --query "TrainingJobSummaries[*].[TrainingJobName, CreationTime, TrainingJobStatus]" \
     --output table
 
-# -----------------------------------------------------------
-# |                    ListTrainingJobs                     |
-# +-------------------------+------------------+------------+
-# |  bike-rf-20260802173108 |  1785691869.604  |  Completed |
-# +-------------------------+------------------+------------+
+# -----------------------------------------------------------------------------
+# |                             ListTrainingJobs                              |
+# +-------------------------+------------------------------------+------------+
+# |  bike-rf-20260802194257 |  2026-08-02T15:42:58.805000-04:00  |  Completed |
+# +-------------------------+------------------------------------+------------+
 
 # confirm in s3
-aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/bike-rf-20260802173108/output/"
-# 2026-08-02 13:33:40     153972 model.tar.gz
+aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/bike-rf-20260802194257/output/"
+# 2026-08-02 15:45:26    3305301 model.tar.gz
 ```
 
 ![training_job01](./img/training_job.png)

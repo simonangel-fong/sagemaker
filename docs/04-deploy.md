@@ -1,12 +1,13 @@
-# AWS Sagemaker - Deployment Endpoint
+# AWS Sagemaker - Endpoints & Deployment
 
 [Back](../README.md)
 
-- [AWS Sagemaker - Deployment Endpoint](#aws-sagemaker---deployment-endpoint)
+- [AWS Sagemaker - Endpoints \& Deployment](#aws-sagemaker---endpoints--deployment)
   - [Architecture](#architecture)
-  - [Files](#files)
   - [Key contract](#key-contract)
   - [Use](#use)
+    - [Deploy model and endpoints](#deploy-model-and-endpoints)
+    - [Integrate with `lambda` and `api gateway`](#integrate-with-lambda-and-api-gateway)
   - [Test: Public API](#test-public-api)
   - [Runbook](#runbook)
 
@@ -39,19 +40,6 @@ nothing while idle.
 
 ---
 
-## Files
-
-| File                        | Purpose                          |
-| --------------------------- | -------------------------------- |
-| `src/inference.py`          | The four container hooks         |
-| `src/invoke_endpoint.py`    | Test client (SigV4, direct)      |
-| `lambda/predict/handler.py` | Public API handler               |
-| `tests/test_handler.py`     | Handler tests, no AWS needed     |
-| `10-deployment-endpoint.tf` | Model, endpoint config, endpoint |
-| `11-api.tf`                 | Lambda, HTTP API, route          |
-
----
-
 ## Key contract
 
 The container calls these four functions. Only `model_fn` is required:
@@ -63,22 +51,33 @@ def predict_fn(data, model):        # predict + confidence
 def output_fn(prediction, accept):  # serialize JSON
 ```
 
-![deploy engpoint](./img/deploy_endpoint.png)
+![deploy_endpoint01](./img/deploy_endpoint01.png)
 
 ---
 
 ## Use
 
-Set the artifact in `terraform.tfvars`, then apply:
+### Deploy model and endpoints
+
+1. Set the artifact in `terraform.tfvars`, then apply:
 
 ```hcl
 model_artifact_uri = "s3://<bucket>/models/<job>/output/model.tar.gz"
 ```
 
-```sh
-terraform -chdir=infra apply -auto-approve   # ~18 min to InService
+2. apply
 
-# test
+```sh
+terraform -chdir=infra apply -auto-approve
+# deploy takes time ~15min
+```
+
+---
+
+### Integrate with `lambda` and `api gateway`
+
+```sh
+# local test
 pytest lambda/tests/ -q
 # ......................                                                                                                                      [100%]
 # 22 passed in 0.04s
@@ -88,11 +87,15 @@ pytest lambda/tests/ -q
 
 ## Test: Public API
 
+![deploy_api01](./img/deploy_api01.png)
+
+![deploy_api02](./img/deploy_api02.png)
+
 ```sh
 terraform -chdir=infra output -raw api_url
 # https://ngn74uwg7f.execute-api.ca-central-1.amazonaws.com/predict
 
-curl -X POST "https://ngn74uwg7f.execute-api.ca-central-1.amazonaws.com/predict" -H 'content-type: application/json' -d '{"instances": [{"season": 1, "yr": 1, "mnth": 6, "hr": 8, "holiday": 0, "weekday": 3, "workingday": 1, "weathersit": 1, "temp": 0.24, "atemp": 0.2879, "hum": 0.81, "windspeed": 0.0}]}'
+curl -X POST "https://ngn74uwg7f.execute-api.ca-central-1.amazonaws.com/predict" -H 'content-type: application/json' -d '{"instances": [{"season": 1, "yr": 1, "mnth": 6, "hr": 8, "holiday": 0, "weekday": 3, "workingday": 1, "weathersit": 1, "temp": 0.24, "atemp": 0.2879, "hum": 0.81, "windspeed": 0.0}]}'; echo
 # {"predictions": [207.2], "count": 1}
 ```
 
@@ -127,6 +130,4 @@ aws logs get-log-events \
   --limit 60    \
   --query "events[].message"    \
   --output text
-
-
 ```
