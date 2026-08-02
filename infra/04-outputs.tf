@@ -1,15 +1,21 @@
 # outputs.tf
 
-# output "notebook_login_command" {
-#   description = "CLI command that returns a presigned login URL."
-#   value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
-# }
+# ##############################
+# Bucket
+# ##############################
+output "data_bucket" {
+  description = "S3 bucket for raw data, features and model artifacts."
+  value       = aws_s3_bucket.data.id
+}
 
-# # Name carries a random suffix, so this cannot be derived by hand.
-# output "data_bucket" {
-#   description = "S3 bucket for data, models and inference code."
-#   value       = aws_s3_bucket.data.id
-# }
+
+# ##############################
+# Notebook
+# ##############################
+output "notebook_login_command" {
+  description = "CLI command that returns a presigned login URL."
+  value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
+}
 
 # output "execution_role_arn" {
 #   description = "Role passed to training jobs and the endpoint."
