@@ -54,7 +54,7 @@ def submit(
             "min-samples-leaf": min_samples_leaf,
         },
         output_data_config=OutputDataConfig(
-            s3_output_path=f"s3://{bucket}/models/",
+            s3_output_path=f"s3://{bucket}/model/",
         ),
     )
 

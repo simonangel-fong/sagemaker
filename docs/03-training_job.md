@@ -55,8 +55,26 @@ pip install sagemaker-train
 
 # submit training job
 python src/train/submit_job.py --bucket (terraform -chdir=infra output -raw data_bucket) --role   (terraform -chdir=infra output -raw execution_role_arn)
+
+# get most recent trainjob
+aws sagemaker list-training-jobs \
+    --sort-by CreationTime \
+    --sort-order Descending \
+    --max-results 5 \
+    --query "TrainingJobSummaries[*].[TrainingJobName, CreationTime, TrainingJobStatus]" \
+    --output table
+
+# -----------------------------------------------------------
+# |                    ListTrainingJobs                     |
+# +-------------------------+------------------+------------+
+# |  bike-rf-20260802171250 |  1785690772.417  |  Completed |
+# |  bike-rf-20260802170615 |  1785690376.705  |  Completed |
+# |  bike-rf-20260802112540 |  1785684346.554  |  Failed    |
+# |  bike-rf-20260802111823 |  1785683909.737  |  Failed    |
+# |  bike-rf-20260802111034 |  1785683441.11   |  Failed    |
+# +-------------------------+------------------+------------+
+
+# confirm in s3
+aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/bike-rf-20260802171250/output"
 ```
 
-Result: `Completed`, 115 billable seconds, `rmse=126.35 r2=0.6342`.
-
-![training](./img/training_jobs.png)

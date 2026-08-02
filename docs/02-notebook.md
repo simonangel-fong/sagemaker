@@ -92,8 +92,7 @@ aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/raw/"
 ### Model
 
 ```sh
-aws s3 ls "s3://mlops-sagemaker-studio-dev-data-3vi8kw/model/"
-# 2026-08-01 15:23:15          0
-# 2026-08-01 15:57:52        121 features.joblib
-# 2026-08-01 15:57:52   12546337 model.joblib
+aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/"
+# 2026-08-02 09:57:23        121 features.joblib
+# 2026-08-02 09:57:23   12546337 model.joblib
 ```
