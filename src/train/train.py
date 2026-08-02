@@ -55,6 +55,8 @@ def main():
     df = load(args.train)
     print(f"loaded {len(df)} rows from {args.train}", flush=True)
 
+    assert "hr" in df.columns, f"no hr column in {args.train} -- is this the daily file?"
+
     features = [c for c in df.columns if c not in DROP]
 
     # split

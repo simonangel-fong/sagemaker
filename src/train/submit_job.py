@@ -62,7 +62,7 @@ def submit(
         input_data_config=[
             InputData(
                 channel_name="train",
-                data_source=f"s3://{bucket}/raw/",
+                data_source=f"s3://{bucket}/featured/",
             )
         ],
         wait=wait,
