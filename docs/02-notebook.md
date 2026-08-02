@@ -43,16 +43,16 @@
 
 ```sh
 terraform -chdir=infra output -raw data_bucket
-# mlops-sagemaker-studio-dev-data-3vi8kw
+# mlops-sagemaker-dev-data-k35ss6
 
-aws s3 cp data/ "s3://mlops-sagemaker-studio-dev-data-3vi8kw/raw/" --recursive --exclude "*" --include "*.csv"
-# upload: data\day.csv to s3://mlops-sagemaker-studio-dev-data-3vi8kw/raw/day.csv
-# upload: data\hour.csv to s3://mlops-sagemaker-studio-dev-data-3vi8kw/raw/hour.csv
+aws s3 cp data/ "s3://mlops-sagemaker-dev-data-k35ss6/raw/" --recursive --exclude "*" --include "*.csv"
+# upload: data\day.csv to s3://mlops-sagemaker-dev-data-k35ss6/raw/day.csv
+# upload: data\hour.csv to s3://mlops-sagemaker-dev-data-k35ss6/raw/hour.csv
 
-aws s3 ls "s3://mlops-sagemaker-studio-dev-data-3vi8kw/raw/"
-# 2026-08-01 15:23:15          0
-# 2026-08-01 15:31:14      57569 day.csv
-# 2026-08-01 15:31:14    1156736 hour.csv
+aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/raw/"
+# 2026-08-02 09:14:00          0
+# 2026-08-02 09:19:08      57569 day.csv
+# 2026-08-02 09:19:08    1156736 hour.csv
 ```
 
 ---

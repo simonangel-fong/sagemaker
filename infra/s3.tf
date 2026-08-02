@@ -5,7 +5,6 @@ locals {
   bucket_prefix = ["raw/", "featured/", "model/"]
 }
 
-
 resource "random_string" "suffix" {
   length  = 6
   special = false
@@ -53,7 +52,7 @@ resource "aws_s3_bucket_versioning" "data" {
 # prefixes keys
 # ##############################
 resource "aws_s3_object" "prefixes" {
-  for_each = toset(["raw/", "clean/", "features/", "models/"])
+  for_each = toset(local.bucket_prefix)
 
   bucket = aws_s3_bucket.data.id
   key    = each.value
