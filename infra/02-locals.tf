@@ -5,7 +5,6 @@ locals {
   # Metadata
   # ##############################
   prefix_name = "${var.project}-${var.env}"
-
   default_tags = merge(
     {
       Project   = var.project

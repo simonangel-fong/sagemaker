@@ -42,7 +42,7 @@ A side project that explores key features of sagemaker.
 
 - Training Job
 
-![training01](./docs/img/training01.png)
+![training_job01](./docs/img/training_job.png)
 
 ---
 

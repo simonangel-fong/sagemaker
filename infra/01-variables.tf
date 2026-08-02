@@ -48,7 +48,6 @@ variable "vpc_id" {
   }
 }
 
-# Must reach an IGW or NAT: the notebook pulls pip packages and datasets.
 variable "public_subnet_ids" {
   description = "Subnets for SageMaker. Must have a route to an IGW or NAT."
   type        = list(string)
@@ -94,7 +93,7 @@ variable "git_branch" {
 }
 
 # ##############################
-# Deployment Endpoint
+# Sagemaker Deployment
 # ##############################
 variable "model_artifact_uri" {
   description = "S3 URI of the model.tar.gz to serve. Empty disables the endpoint."

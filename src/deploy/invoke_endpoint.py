@@ -1,8 +1,5 @@
-"""Invoke the bike sharing endpoint with real hours pulled from S3.
-
-Reads the same raw/bike/hour.csv the training job used, so predictions can be
-checked against known counts. Sends 2012 rows, which the model was not
-trained on.
+"""
+Invoke endpoint
 """
 
 import argparse

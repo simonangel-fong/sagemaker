@@ -60,21 +60,19 @@ python src/train/submit_job.py --bucket (terraform -chdir=infra output -raw data
 aws sagemaker list-training-jobs \
     --sort-by CreationTime \
     --sort-order Descending \
-    --max-results 5 \
+    --max-results 1 \
     --query "TrainingJobSummaries[*].[TrainingJobName, CreationTime, TrainingJobStatus]" \
     --output table
 
 # -----------------------------------------------------------
 # |                    ListTrainingJobs                     |
 # +-------------------------+------------------+------------+
-# |  bike-rf-20260802171250 |  1785690772.417  |  Completed |
-# |  bike-rf-20260802170615 |  1785690376.705  |  Completed |
-# |  bike-rf-20260802112540 |  1785684346.554  |  Failed    |
-# |  bike-rf-20260802111823 |  1785683909.737  |  Failed    |
-# |  bike-rf-20260802111034 |  1785683441.11   |  Failed    |
+# |  bike-rf-20260802173108 |  1785691869.604  |  Completed |
 # +-------------------------+------------------+------------+
 
 # confirm in s3
-aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/bike-rf-20260802171250/output"
+aws s3 ls "s3://mlops-sagemaker-dev-data-k35ss6/model/bike-rf-20260802173108/output/"
+# 2026-08-02 13:33:40     153972 model.tar.gz
 ```
 
+![training_job01](./img/training_job.png)

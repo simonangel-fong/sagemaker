@@ -1,8 +1,5 @@
-"""Inference handlers for the bike sharing endpoint.
-
-The sklearn serving container imports this and calls the four hooks below.
-Only model_fn is strictly required; the rest are defined so the accepted
-request shapes are explicit rather than relying on container defaults.
+"""
+Inference handlers
 """
 
 import json
@@ -12,14 +9,13 @@ import joblib
 import numpy as np
 import pandas as pd
 
-# Written by src/train.py into SM_MODEL_DIR, which the container unpacks here.
 MODEL_FILE = "model.joblib"
 FEATURES_FILE = "features.joblib"
 
 
 def model_fn(model_dir):
     """Return both the regressor and the column order it was trained on."""
-    model_dir = Path(model_dir)s
+    model_dir = Path(model_dir)
     return {
         "model": joblib.load(model_dir / MODEL_FILE),
         "features": joblib.load(model_dir / FEATURES_FILE),
