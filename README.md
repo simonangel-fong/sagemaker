@@ -3,22 +3,38 @@
 A side project that explores key features of sagemaker.
 
 - [Amazon SageMaker](#amazon-sagemaker)
-  - [Feature: Notebooks](#feature-notebooks)
+  - [Sagamaker](#sagamaker)
+  - [Feature: JupyterLab Notebooks](#feature-jupyterlab-notebooks)
   - [Feature: Training Job](#feature-training-job)
   - [Feature: Deployment Endpoints](#feature-deployment-endpoints)
+  - [Integrate with `Lambda` and `API Gateway`](#integrate-with-lambda-and-api-gateway)
   - [Documentation](#documentation)
 
 ---
 
-## Feature: Notebooks
+## Sagamaker
 
-- Notebook
+- `Amazon SageMaker`
+  - a fully managed cloud platform by AWS that helps developers and data scientists build, train, and deploy machine learning models.
+  - simplifies workflows by removing the need to manually set up or manage servers.
 
-![notebook instance](./docs/img/notebook_instance.png)
+---
 
-![train notebook](./docs/img/notebook_train01.png)
+## Feature: JupyterLab Notebooks
 
-![train notebook](./docs/img/notebook_train02.png)
+- `JupyterLab feature`
+  - A managed Jupyter notebook instance within SageMaker.
+
+- JupyterLab UI
+  ![notebook01](./docs/img/notebook01.png)
+
+- Notebook UI
+  ![notebook02](./docs/img/notebook02.png)
+
+- Training with the classic bike sharing dataset
+  ![notebook03](./docs/img/notebook03.png)
+
+  ![notebook04](./docs/img/notebook04.png)
 
 ---
 
@@ -26,7 +42,7 @@ A side project that explores key features of sagemaker.
 
 - Training Job
 
-![training](./docs/img/training_jobs.png)
+![training01](./docs/img/training01.png)
 
 ---
 
@@ -34,7 +50,13 @@ A side project that explores key features of sagemaker.
 
 - Deployment Endpoint
 
-![deploy endpoint](./docs/img/deploy_endpoint.png)
+![deploy_endpoint01](./docs/img/deploy_endpoint01.png)
+
+---
+
+## Integrate with `Lambda` and `API Gateway`
+
+- Diagram
 
 - Test API Gateway
 
