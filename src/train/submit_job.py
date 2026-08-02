@@ -42,8 +42,6 @@ def submit(
         role=role,
         base_job_name="bike-rf",
         source_code=SourceCode(
-            # Relative to the repo root when run as a CLI; the notebook
-            # lives a directory down, so resolve against this file instead.
             source_dir=os.path.dirname(os.path.abspath(__file__)),
             entry_script="train.py",
         ),

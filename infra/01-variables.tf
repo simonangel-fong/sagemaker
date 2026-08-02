@@ -71,7 +71,7 @@ variable "notebook_instance_type" {
 variable "notebook_volume_size" {
   description = "Size in GB of the notebook instance EBS volume."
   type        = number
-  default     = 5
+  default     = 10
 
   validation {
     condition     = var.notebook_volume_size >= 5 && var.notebook_volume_size <= 16384
