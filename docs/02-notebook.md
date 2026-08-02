@@ -3,11 +3,27 @@
 [Back](../README.md)
 
 - [Amazon SageMaker Demo - Jupyter Notebook](#amazon-sagemaker-demo---jupyter-notebook)
+  - [Key config](#key-config)
   - [Notebook Instance](#notebook-instance)
-  - [Bike sharing demand model](#bike-sharing-demand-model)
+  - [Demo: Bike sharing demand model](#demo-bike-sharing-demand-model)
     - [Upload to S3](#upload-to-s3)
     - [Taining](#taining)
     - [Model](#model)
+
+---
+
+## Key config
+
+The repo is cloned into the instance on start, so notebooks live in git:
+
+```hcl
+resource "aws_sagemaker_notebook_instance" "this" {
+  subnet_id               = var.public_subnet_ids[0]
+  direct_internet_access  = "Enabled"
+  kms_key_id              = aws_kms_key.this.arn
+  default_code_repository = aws_sagemaker_code_repository.this.code_repository_name
+}
+```
 
 ---
 
@@ -15,9 +31,17 @@
 
 ![notebook01](./img/notebook01.png)
 
+![notebook02](./img/notebook02.png)
+
+- Login
+
+```sh
+terraform -chdir=infra output -raw notebook_login_command
+```
+
 ---
 
-## Bike sharing demand model
+## Demo: Bike sharing demand model
 
 - Dataset:
   - Bike-Sharing Demand Dataset

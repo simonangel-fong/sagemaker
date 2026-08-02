@@ -32,26 +32,46 @@ data "aws_iam_policy_document" "kms" {
     }
   }
 
+  # allow assume role
+  statement {
+    sid    = "AllowAssumeRole"
+    effect = "Allow"
+
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey",
+    ]
+
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.sagemaker_assume.arn]
+    }
+  }
+
   # allow sagemaker
-  #   statement {
-  #     sid    = "AllowSageMakerExecutionRole"
-  #     effect = "Allow"
+  statement {
+    sid    = "AllowSageMakerService"
+    effect = "Allow"
 
-  #     actions = [
-  #       "kms:Encrypt",
-  #       "kms:Decrypt",
-  #       "kms:ReEncrypt*",
-  #       "kms:GenerateDataKey*",
-  #       "kms:DescribeKey",
-  #     ]
+    actions = [
+      "kms:CreateGrant",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:GenerateDataKey*",
+    ]
 
-  #     resources = ["*"]
+    resources = ["*"]
 
-  #     principals {
-  #       type        = "AWS"
-  #       identifiers = [aws_iam_role.sagemaker_assume.arn]
-  #     }
-  #   }
+    principals {
+      type        = "Service"
+      identifiers = ["sagemaker.amazonaws.com"]
+    }
+  }
 
   #   # Lambda
   #   statement {

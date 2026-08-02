@@ -19,7 +19,7 @@ FEATURES_FILE = "features.joblib"
 
 def model_fn(model_dir):
     """Return both the regressor and the column order it was trained on."""
-    model_dir = Path(model_dir)
+    model_dir = Path(model_dir)s
     return {
         "model": joblib.load(model_dir / MODEL_FILE),
         "features": joblib.load(model_dir / FEATURES_FILE),

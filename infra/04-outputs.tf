@@ -17,10 +17,13 @@ output "notebook_login_command" {
   value       = "aws sagemaker create-presigned-notebook-instance-url --notebook-instance-name ${aws_sagemaker_notebook_instance.this.name} --region ${var.aws_region} --query AuthorizedUrl --output text"
 }
 
-# output "execution_role_arn" {
-#   description = "Role passed to training jobs and the endpoint."
-#   value       = aws_iam_role.sagemaker_execution.arn
-# }
+# ##############################
+# Sagemaker
+# ##############################
+output "execution_role_arn" {
+  description = "Role passed to training jobs and the endpoint."
+  value       = aws_iam_role.sagemaker_assume.arn
+}
 
 # output "endpoint_name" {
 #   description = "Serverless inference endpoint, null when disabled."
