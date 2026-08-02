@@ -1,13 +1,3 @@
-"""HTTP API front door for the bike sharing endpoint.
-
-The SageMaker endpoint only accepts SigV4-signed IAM requests, so it cannot be
-called from a browser. This handler holds the IAM role, validates the payload,
-and forwards it to InvokeEndpoint.
-
-Kept out of src/ on purpose: src/ is tarred wholesale into sourcedir.tar.gz and
-shipped into the model container, which has no business carrying this.
-"""
-
 import json
 import os
 
@@ -15,8 +5,6 @@ import boto3
 
 ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
 
-# Mirrors src/train.py's column set. Declared here so a malformed request fails
-# at the door with a 400 instead of costing an inference and returning a 500.
 FEATURES = [
     "season",
     "yr",
@@ -103,8 +91,6 @@ def _validate(record, index):
     clean = {}
     for feature in FEATURES:
         value = record[feature]
-        # bool is an int subclass, but a bool here means the caller sent the
-        # wrong type for a numeric field.
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise BadRequest(f"instance {index}: feature '{feature}' must be a number")
         clean[feature] = value
@@ -150,7 +136,5 @@ def handler(event, context=None, runtime=None):
         print(f"invoke_endpoint failed: {type(exc).__name__}: {exc}")
         return _response(502, {"error": "inference failed"})
 
-    # output_fn returns {"predictions": [...]}, but tolerate a bare list so a
-    # change on the container side degrades instead of 500-ing.
     predictions = result.get("predictions", result) if isinstance(result, dict) else result
     return _response(200, {"predictions": predictions, "count": len(instances)})

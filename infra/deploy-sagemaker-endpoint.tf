@@ -1,4 +1,4 @@
-# sagemaker-deployment.tf
+# deploy-sagemaker-endpoint.tf
 
 locals {
   endpoint_enabled = var.model_artifact_uri != ""
@@ -12,7 +12,7 @@ data "archive_file" "inference_code" {
   count = local.endpoint_enabled ? 1 : 0
 
   type        = "tar.gz"
-  source_dir  = "${path.module}/../../src"
+  source_dir  = "${path.module}/../src/deploy/"
   output_path = "${path.module}/.terraform/tmp/sourcedir.tar.gz"
   excludes    = ["__pycache__"]
 }
@@ -33,7 +33,7 @@ resource "aws_sagemaker_model" "this" {
   count = local.endpoint_enabled ? 1 : 0
 
   name               = "${local.prefix_name}-model-${local.revision}"
-  execution_role_arn = aws_iam_role.sagemaker_execution.arn
+  execution_role_arn = aws_iam_role.sagemaker_assume.arn
 
   primary_container {
     image          = var.inference_image
