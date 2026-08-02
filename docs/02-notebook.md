@@ -1,12 +1,19 @@
-# Amazon SageMaker Studio Demo - Jupyter Notebook
+# Amazon SageMaker Demo - Jupyter Notebook
 
 [Back](../README.md)
 
-- [Amazon SageMaker Studio Demo - Jupyter Notebook](#amazon-sagemaker-studio-demo---jupyter-notebook)
+- [Amazon SageMaker Demo - Jupyter Notebook](#amazon-sagemaker-demo---jupyter-notebook)
+  - [Notebook Instance](#notebook-instance)
   - [Bike sharing demand model](#bike-sharing-demand-model)
     - [Upload to S3](#upload-to-s3)
     - [Taining](#taining)
     - [Model](#model)
+
+---
+
+## Notebook Instance
+
+![notebook01](./img/notebook01.png)
 
 ---
 

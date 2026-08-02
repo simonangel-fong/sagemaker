@@ -1,8 +1,8 @@
-# Amazon SageMaker Studio Demo - Infrastructure
+# Amazon SageMaker Demo - Infrastructure
 
 [Back](../README.md)
 
-- [Amazon SageMaker Studio Demo - Infrastructure](#amazon-sagemaker-studio-demo---infrastructure)
+- [Amazon SageMaker Demo - Infrastructure](#amazon-sagemaker-demo---infrastructure)
   - [IaC: Terraform](#iac-terraform)
   - [Runbook](#runbook)
   - [Clean up](#clean-up)
